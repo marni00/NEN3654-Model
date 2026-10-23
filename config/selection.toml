@@ -1,0 +1,28 @@
+# Fill in comma separated persistent IDs, for example: ids = [1, 3, 1224]
+# To select all features in a layer, use: ids = "all"
+
+[Waterleiding]
+ids = []
+combine = false
+
+[ThermischePijpleiding]
+ids = []
+combine = false
+
+[Rioolleiding]
+ids = []
+combine = false
+
+[OlieGasChemicalienPijpleiding]
+ids = []
+combine = false
+
+[Overig]
+ids = []
+combine = false
+
+[Elektriciteitskabel]
+ids = []
+
+[proposed_highvoltage]
+ids = []

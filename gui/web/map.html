@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self' qrc: data: https://unpkg.com https://*.tile.openstreetmap.org;
+                 script-src 'self' qrc: https://unpkg.com;
+                 style-src 'self' 'unsafe-inline' https://unpkg.com;
+                 img-src 'self' data: blob: https://*.tile.openstreetmap.org;
+                 connect-src 'self' qrc: data: blob: https://*.tile.openstreetmap.org https://unpkg.com;
+                 worker-src 'self' blob: https://unpkg.com;">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NEN 3654 kaart</title>
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.12.0/dist/maplibre-gl.css">
+  <link rel="stylesheet" href="map.css">
+</head>
+<body>
+<div id="map"></div>
+<div id="message" role="status">Kaart laden…</div>
+<script src="qrc:///qtwebchannel/qwebchannel.js"></script>
+<script type="module" src="map.js"></script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+# Fill in comma separated persistent IDs, for example:
+# id = [1, 3, 1224]. Fill code like 'L09'.
+
+[proposed_highvoltage]
+code = ""
+vertical_position = "underground"
+work_voltage = 110000
+
+[[Elektriciteitskabel]]
+id = []
+code = ""
+
+[[Elektriciteitskabel]]
+id = []
+code = ""
+
+[[Elektriciteitskabel]]
+id = []
+code = ""

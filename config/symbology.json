@@ -1,0 +1,77 @@
+{
+  "default_color": [80, 80, 80],
+
+  "layer_colors": {
+    "OlieGasChemicalienPijpleiding": [110, 160, 95],
+    "Overig": [110, 100, 100],
+    "Waterleiding": [40, 180, 225],
+    "Rioolleiding": [170, 100, 50],
+    "ThermischePijpleiding": [140, 95, 155],
+    "Elektriciteitskabel": [250, 150, 5],
+    "proposed_highvoltage": [210, 35, 110],
+    "Mast": [40, 40, 40]
+  },
+
+  "influencer_layers": [
+    "Elektriciteitskabel",
+    "proposed_highvoltage"
+  ],
+
+  "no_pass_voltage_types": [
+    "Elektriciteitskabel"
+  ],
+
+  "infrastructure_type": {
+    "field": "infrastructure_type",
+    "types": [
+      "OlieGasChemicalienPijpleiding",
+      "Overig",
+      "Waterleiding",
+      "Rioolleiding",
+      "ThermischePijpleiding",
+      "Elektriciteitskabel",
+      "proposed_highvoltage"
+    ]
+  },
+
+  "voltage_class": {
+    "field": "thema",
+    "default_style": "esriSLSSolid",
+    "default_width": 1.0,
+    "classes": {
+      "laagspanning": {
+        "label": "Laagspanning",
+        "color": [250, 190, 5],
+        "style": "esriSLSSolid",
+        "width": 1.0
+      },
+      "middenspanning": {
+        "label": "Middenspanning",
+        "color": [250, 150, 5],
+        "style": "esriSLSSolid",
+        "width": 1.0
+      },
+      "hoogspanning": {
+        "label": "Hoogspanning",
+        "color": [215, 60, 10],
+        "style": "esriSLSSolid",
+        "width": 1.0
+      },
+      "landelijkHoogspanningsnet": {
+        "label": "Landelijk hoogspanningsnet",
+        "color": [215, 60, 10],
+        "style": "esriSLSDash",
+        "width": 1.0
+      }
+    }
+  },
+
+  "standard_line": {
+    "style": "esriSLSSolid",
+    "width": 1.0
+  },
+
+  "standard_point": {
+    "size": 7.0
+  }
+}
