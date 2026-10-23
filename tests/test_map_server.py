@@ -147,3 +147,33 @@ def test_overlap_navigation_and_arcgis_hints_are_exposed_in_gui() -> None:
     assert "cycle_overlapping_feature" in panel
     assert 'Sweco: "https://ggc.maps.arcgis.com"' in setup
     assert '"voornaam.achternaal@sweco.nl"' in setup
+
+def test_qwebchannel_javascript_is_served_with_executable_mime_type(
+    tmp_path: Path,
+) -> None:
+    web_root = tmp_path / "web"
+    web_root.mkdir()
+    for name in ("map.html", "map.js", "map.css"):
+        (web_root / name).write_text(name, encoding="utf-8")
+
+    server = LocalMapServer(web_root)
+    try:
+        with urlopen(f"{server.base_url}/qwebchannel.js", timeout=2) as response:
+            assert response.status == 200
+            assert response.headers["Content-Type"].startswith(
+                "application/javascript"
+            )
+            assert b"QWebChannel" in response.read()
+    finally:
+        server.close()
+
+
+def test_map_html_loads_qwebchannel_from_same_http_origin() -> None:
+    project_root = Path(__file__).resolve().parents[1]
+    html = (project_root / "gui" / "web" / "map.html").read_text(
+        encoding="utf-8"
+    )
+
+    assert '<script src="qwebchannel.js"></script>' in html
+    assert "qrc:///qtwebchannel/qwebchannel.js" not in html
+
