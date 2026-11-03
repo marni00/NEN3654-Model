@@ -17,7 +17,7 @@ from model.post.to_arcgis_online import to_arcgis_online
 
 KLIC_PROJECT_NAME = "KLIC_groenedijk"
 PORTAL_URL = "https://ggc.maps.arcgis.com"
-USERNAME = "marnix.hoogenboom@sweco.nl"
+USERNAME = "firstname.lastname@sweco.nl"
 
 
 # GUI INTEGRATION CHANGE: parameters allow secure GUI credential entry and
