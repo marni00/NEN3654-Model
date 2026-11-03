@@ -1,3 +1,12 @@
+"""
+upload_ArcGIS_Online
+
+Command-line/adapter wrapper that enumerates output GeoPackages and delegates publication to model.post.to_arcgis_online.
+
+Input:
+    Optional publication runner.
+"""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -8,7 +17,7 @@ from model.post.to_arcgis_online import to_arcgis_online
 
 KLIC_PROJECT_NAME = "KLIC_groenedijk"
 PORTAL_URL = "https://ggc.maps.arcgis.com"
-USERNAME = "voor.achternaam@sweco.nl"
+USERNAME = "marnix.hoogenboom@sweco.nl"
 
 
 # GUI INTEGRATION CHANGE: parameters allow secure GUI credential entry and

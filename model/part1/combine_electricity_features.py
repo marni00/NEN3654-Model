@@ -1,5 +1,22 @@
-#Script 9
+"""
 
+combine_electricity_features
+
+In this script connected electricity cables and lines are combined to larger features when their relevant properties are compatible
+
+For layer Elektriciteitskabel, features are grouped by their werkVoltage, utilityDeliveryType, verticalePositie and thema
+Features are only connected from endpoint to endpoint. All other forms offeature relations or intersections are not connected
+
+Parameters:
+    Endpoint connection tolerance is set to 0.1m, pipeline diameter values must differ a maximum of 10mm. Other parameters must be an exact match.
+
+Input:
+    Reads KLIC_temp8.gpkg
+
+Output:
+    Writes KLIC_temp9.gpkg
+
+"""
 from pathlib import Path
 from collections import deque
 from shapely.geometry import Point
@@ -7,10 +24,8 @@ from shapely.geometry import Point
 import geopandas as gpd
 import numpy as np
 from shapely.ops import unary_union
-from itertools import combinations
 
 CONNECT_TOLERANCE_M = 0.01  # 1 cm, assuming CRS units are metres
-MAX_BUNDLE_DISTANCE_M = 10.0
 
 target_layer = "Elektriciteitskabel"
 
@@ -204,121 +219,6 @@ def get_elektriciteitskabel_match_columns(gdf):
     return match_columns
 
 
-def remove_outer_high_voltage_lines(gdf):
-    """
-    For hoogspanning and landelijkHoogspanningsnet, group lines with
-    equal 'netwerk' into spatial bundles of three and remove the two
-    outer lines from each bundle.
-    """
-    relevant_themes = {
-        "hoogspanning",
-        "landelijkhoogspanningsnet",
-    }
-
-    themes = (
-        gdf["thema"]
-        .astype("string")
-        .str.strip()
-        .str.casefold()
-    )
-
-    candidates = gdf[
-        themes.isin(relevant_themes)
-        & gdf.geometry.notna()
-        & ~gdf.geometry.is_empty
-    ].copy()
-
-    candidates["_theme"] = themes.loc[candidates.index]
-
-    indices_to_remove = set()
-
-    for _, group in candidates.groupby(
-        ["_theme", "netwerk"],
-        dropna=False,
-        sort=False,
-    ):
-        remaining = list(group.index)
-
-        while len(remaining) >= 3:
-            # Find the two spatially closest lines.
-            first, second = min(
-                combinations(remaining, 2),
-                key=lambda pair: gdf.at[
-                    pair[0], "geometry"
-                ].hausdorff_distance(
-                    gdf.at[pair[1], "geometry"]
-                ),
-            )
-
-            # Find the line closest to that pair.
-            possible_thirds = [
-                idx
-                for idx in remaining
-                if idx not in {first, second}
-            ]
-
-            third = min(
-                possible_thirds,
-                key=lambda idx: (
-                    gdf.at[first, "geometry"].hausdorff_distance(
-                        gdf.at[idx, "geometry"]
-                    )
-                    + gdf.at[second, "geometry"].hausdorff_distance(
-                        gdf.at[idx, "geometry"]
-                    )
-                ),
-            )
-
-            trio = [first, second, third]
-
-            # All three lines must remain close over their full path.
-            pair_distances = [
-                gdf.at[a, "geometry"].hausdorff_distance(
-                    gdf.at[b, "geometry"]
-                )
-                for a, b in combinations(trio, 2)
-            ]
-
-            # The closest available trio is not a real spatial bundle.
-            # Stop processing this theme/network group rather than
-            # deleting lines incorrectly.
-            if max(pair_distances) > MAX_BUNDLE_DISTANCE_M:
-                break
-
-            # The middle line has the smallest total distance
-            # to the other two.
-            scores = {
-                idx: sum(
-                    gdf.at[idx, "geometry"].hausdorff_distance(
-                        gdf.at[other_idx, "geometry"]
-                    )
-                    for other_idx in trio
-                    if other_idx != idx
-                )
-                for idx in trio
-            }
-
-            middle_idx = min(scores, key=scores.get)
-
-            # Remove both outer lines.
-            indices_to_remove.update(
-                idx for idx in trio if idx != middle_idx
-            )
-
-            # This bundle has been handled.
-            remaining = [
-                idx for idx in remaining if idx not in trio
-            ]
-
-    print(
-        f"  Removed {len(indices_to_remove)} outer "
-        "high-voltage lines."
-    )
-
-    return gdf.drop(
-        index=list(indices_to_remove)
-    ).reset_index(drop=True)
-
 def combine_elektriciteitskabel_layer(gdf, layer_name):
     print(f"Processing Elektriciteitskabel layer: {layer_name}")
 
@@ -384,11 +284,6 @@ def combine_elektriciteitskabel_layer(gdf, layer_name):
         geometry="geometry",
         crs=gdf.crs,
     )
-
-    combined_gdf = remove_outer_high_voltage_lines(combined_gdf)
-
-    # Preserve original column order
-    combined_gdf = combined_gdf[gdf.columns]
 
     # Preserve original column order
     combined_gdf = combined_gdf[gdf.columns]

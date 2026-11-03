@@ -1,5 +1,17 @@
-# Script 18
-"""Assign run-specific values to normalized relationship tables."""
+"""
+assign_correct_distance_to_unique_run
+
+Computes minimum and maximum distance for the pipeline and hv-system relationships
+
+Joins require a full identity combination, to prevent that wrong relations are being associated with eachother
+
+Input:
+    Reads KLIC_temp17.gpkg and endpoint_distance_observations from KLIC_temp12.gpkg
+
+Output:
+    Writes KLIC_temp18.gpkg
+
+"""
 
 from pathlib import Path
 

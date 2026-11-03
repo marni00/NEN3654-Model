@@ -1,3 +1,11 @@
+"""
+gis_repository
+
+Discovers output datasets/layers, reads each layer once, preserves persistent IDs, builds compact MapFeature records, transforms only display geometry to EPSG:4326 and prepares GeoJSON/map payloads.
+
+Input:
+    Read-only GUI repository; model calculations remain in source CRS.
+"""
 from __future__ import annotations
 
 import json
@@ -69,7 +77,7 @@ class GISRepository:
 
         for layer_index, layer in enumerate(selected_layers, start=1):
             if progress:
-                progress(layer_index - 1, total, f"Kaartlaag voorbereiden: {layer}")
+                progress(layer_index - 1, total, f"Prepare layer: {layer}")
             gdf = pyogrio.read_dataframe(
                 path,
                 layer=layer,
@@ -179,7 +187,7 @@ class GISRepository:
             )
 
         if progress:
-            progress(total, total, f"Kaartdata gereed: {dataset}")
+            progress(total, total, f"Map data ready: {dataset}")
         return LoadedMapData(
             features=tuple(features),
             geojson_by_layer=geojson_by_layer,

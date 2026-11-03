@@ -1,3 +1,12 @@
+"""
+status_bar
+
+Displays current task status/progress and cancellation state from AppState.
+
+Input:
+    Presentation only.
+"""
+
 from __future__ import annotations
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QProgressBar, QPushButton, QVBoxLayout
 from gui.models import AppState, TaskState

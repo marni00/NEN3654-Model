@@ -1,3 +1,13 @@
+"""
+symbology
+
+Loads config/symbology.json and resolves canonical layer names, infrastructure/voltage classes, feature colors, line widths/dashes, point sizes and legend entries.
+
+Input:
+    Display styling helper.
+"""
+
+
 from __future__ import annotations
 
 import json
@@ -174,7 +184,7 @@ class Symbology:
             )
         entries.append(
             LegendEntry(
-                "Voorgestelde hoogspanning",
+                "Proposed high-voltage system",
                 self.layer_colors.get("proposed_highvoltage", self.default_color),
             )
         )

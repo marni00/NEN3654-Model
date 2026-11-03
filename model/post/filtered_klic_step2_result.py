@@ -1,5 +1,16 @@
-# Script 24 (merge variant): Merge full assessment results from KLIC_temp20
-# without no-pass filtering
+"""
+filtered_klic_step2_result
+
+Exports the complete Step 2-enriched inductive population.
+Reads the normalized Step 2 assessment data, reconstructs geometry, normalizes Step 2 status, adds infrastructure_type and writes result_inductive. 
+The population is the Step 1 inductive no-pass population, now carrying UC outcomes.
+
+Input:
+    KLIC_temp20.gpkg.
+
+Output:
+    KLIC_results_step2.gpkg.
+"""
 from pathlib import Path
 
 import geopandas as gpd

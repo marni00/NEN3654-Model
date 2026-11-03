@@ -1,3 +1,11 @@
+"""
+id_lineage
+
+Maintains and validates persistent feature identity across the filtering, model and export stages.
+
+Input:
+    Reads and updates GeoPackage tables directly through SQLite and Pyogrio/GeoPandas-compatible metadata. It is called by run_filtering.py and run_model.py.
+"""
 from __future__ import annotations
 
 import hashlib

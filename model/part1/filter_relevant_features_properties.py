@@ -1,4 +1,21 @@
-#Script 7
+"""
+
+filter_relevant_features_properties
+
+This script removes features that are not relevant based on their voltage, conductivity and pipe diameter
+
+Elektriciteitskabel retains werkVoltage >= 10,000; missing voltage is excluded. Other processed layers retain only conductive values equal to YES after case/whitespace normalization. For any retained layer with buisDiameter, pipe-separated values are parsed and the maximum is used; known diameters below 80 mm are removed, while missing or unparsable diameters are retained.
+
+Parameters:
+    Voltage comparison is >= 10,000. Diameter comparison is >= 80 mm. A missing werkVoltage or conductive column causes that layer to retain no features.
+
+Input:
+    Reads KLIC_temp5.gpkg or KLIC_temp6.gpkg if proposed_highvoltage is added 
+
+Output:
+    Writes KLIC_temp7.gpkg
+
+"""
 from pathlib import Path
 
 import geopandas as gpd

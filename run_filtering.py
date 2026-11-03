@@ -1,3 +1,14 @@
+"""
+run_filtering
+
+Orchestrates the complete Part 1 filtering and preparation pipeline. It parameterizes the historical command-line workflow so that the same processing functions can be called either directly or by the GUI worker, without changing the GIS algorithms.
+
+Input:
+    a .gdb or .gpkg datasource, config.toml and optionally a proposed-high-voltage file. Intermediate outputs are KLIC.gpkg and KLIC_temp2.gpkg through KLIC_temp8.gpkg. Primary
+
+Output:
+    KLIC_temp9.gpkg. KLIC_temp5.gpkg is also retained and updated with matching persistent IDs for post-processing.
+"""
 from __future__ import annotations
 
 from pathlib import Path
@@ -65,31 +76,31 @@ def run_filtering_pipeline(
         if progress:
             progress(number - 1, 9, description)
 
-    begin(1, "KLIC-bron naar werk-GeoPackage schrijven")
+    begin(1, "Write KLIC-source to .gpkg")
     step_1_output = temp_dir / "KLIC.gpkg"
     rewrite_gdb_to_gpkg(input_path=input_path, output_path=step_1_output)
 
-    begin(2, "Eenheden en materialen harmoniseren")
+    begin(2, "Harmonize units and materials")
     step_2_output = temp_dir / "KLIC_temp2.gpkg"
     harmonize_units_materials(input_path=step_1_output, output_path=step_2_output)
 
-    begin(3, "Nettypen en verticale posities ordenen")
+    begin(3, "Order utility types and vertical positions")
     step_3_output = temp_dir / "KLIC_temp3.gpkg"
     reorder_utility_types_and_vertical(input_path=step_2_output, output_path=step_3_output)
 
-    begin(4, "Dubbele features verwijderen")
+    begin(4, "Remove duplicate features")
     step_4_output = temp_dir / "KLIC_temp4.gpkg"
     remove_duplicates(input_path=step_3_output, output_path=step_4_output)
 
-    begin(5, "Mantelbuisfeatures combineren")
+    begin(5, "Combine pipeline conduit features")
     step_5_output = temp_dir / "KLIC_temp5.gpkg"
     combine_conduit_features(input_path=step_4_output, output_path=step_5_output)
 
-    begin(6, "Voorgestelde hoogspanning verwerken")
+    begin(6, "Process proposed high voltage features")
     if proposed_hv_config.get("enabled", INCLUDE_PROPOSED_HV):
         if proposed_hv_path is None or not Path(proposed_hv_path).is_file():
             raise FileNotFoundError(
-                "Voorgestelde hoogspanning is ingeschakeld, maar het bronbestand ontbreekt."
+                "Proposed high voltage is enabled, but the source file is missing."
             )
         step_6_output = temp_dir / "KLIC_temp6.gpkg"
         add_proposed_highvoltage(
@@ -105,15 +116,15 @@ def run_filtering_pipeline(
         print("STEP 6 skipped through runtime config")
         step_6_result = step_5_output
 
-    begin(7, "Relevante features op eigenschappen filteren")
+    begin(7, "Filter relevant features by properties")
     step_7_output = temp_dir / "KLIC_temp7.gpkg"
     filter_relevant_features_properties(input_path=step_6_result, output_path=step_7_output)
 
-    begin(8, "Relevante features volgens NEN 3654 filteren")
+    begin(8, "Filter relevant features according to NEN 3654")
     step_8_output = temp_dir / "KLIC_temp8.gpkg"
     filter_relevant_features_NEN(input_path=step_7_output, output_path=step_8_output)
 
-    begin(9, "Elektriciteitsfeatures combineren")
+    begin(9, "Combine electricity features and assign persistent IDs")
     filtering_output = temp_dir / "KLIC_temp9.gpkg"
     combine_electricity_features(input_path=step_8_output, output_path=filtering_output)
 
@@ -140,7 +151,7 @@ def run_filtering_pipeline(
     )
 
     if progress:
-        progress(9, 9, "Part 1 gereed")
+        progress(9, 9, "Part 1 completed")
     return filtering_output
 
 

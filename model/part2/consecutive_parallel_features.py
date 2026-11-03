@@ -1,26 +1,18 @@
-#Script 13 Test, keeps whole run_ids, instead of only influenced sections.
 """
-Script 13 (wrapped): assign HV run_id values to proposed high-voltage /
-electricity-cable parts using their existing feature_id, and link
-influenced-layer (buisleiding) parts to those runs plus their own
-influenced_run_id sub-groups.
+calculate_parallel_features
 
-This module exposes a single entry point, `run_script13(...)`, so it can be
-imported and called from main.py as one step of the KLIC processing
-orchestrator instead of being executed as a standalone script.
+Reads the authoritative pair table and geometry from KLIC_temp11.gpkg. Reference feature_id values become run_id values directly for proposed HV. 
+Electricity run_id is feature_id + 100. For every matched target feature, the pair table is bridged to each relevant run. influenced_run_id is text in the form '<run_id>.<subrun_no>'. 
+Within one run, a subrun corresponds to one (source_layer, feature_id) conduit feature; geometry connectivity is deliberately not used to merge different conduit features. 
+Subrun numbers are assigned by descending total feature-part length, then stable feature order. 
+A physical conduit part can be linked to multiple runs without duplicating its geometry: the membership is stored in influenced_runid_links.csv.
 
-Usage from main.py:
+Input:
+    Reads KLIC_temp12.gpkg for endpoint observations, KLIC_temp11.gpkg for geometry and KLIC_temp11_parallel_match_tables/parallel_pairs_all.csv.
 
-    from script13_run_ids import run_script13
-
-    result = run_script13(
-        input_gpkg_path="../data/KLIC/KLIC_didam_filtered_combined_relevant_nen3654v4_parallel_endpoint_distances.gpkg",
-        output_gpkg_path="../data/KLIC/KLIC_v5.gpkg",
-    )
-
-    proposed_result = result["proposed_result"]
+Output:
+    Writes KLIC_temp13.gpkg with proposed_hv_parts_with_runid, electricity_cable_parts_with_runid and influenced_parts_with_runid_distance, plus influenced_runid_links.csv.
 """
-
 from pathlib import Path
 import os
 import ast

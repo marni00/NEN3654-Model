@@ -1,7 +1,18 @@
-#Script 1
+"""
 
-# pipelines/rewrite_gdb_to_gpkg.py
+rewrite_gdb_to_gpkg
 
+Copies all layers from the input .gdb to a .gpkg and normalizes the layer names while doing so 
+Remoevs 'main.' prefix from output layer names, verifies that this does not create duplicate names, determines columns shared by all layers, and places those shared columns in the order used by the first source layer. Layer-specific attributes follow, with geometry last. 
+Existing output is deleted before all layers are written.
+
+Input:
+    Reads input .gdb file
+
+Output:
+    Writes KLIC.gpkg
+
+"""
 from pathlib import Path
 
 import pyogrio

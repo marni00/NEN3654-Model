@@ -1,8 +1,19 @@
-# Script 19
-# ============================================================
-# IMPORT DEPENDENCIES
-# ============================================================
+"""
+step1_NEN
 
+Executes NEN 3654 Step 1 for inductive, thermal, capacitive and resistive effects and stores the assessments in normalized form.
+Expands normalized run_relationships and run_memberships in memory, but keeps physical geometry stored once. 
+Inductive required distance is calculated from l in kilometres: ug_le24kv = 210.92*ln(l_km)+148.99; ug_gt24kv = 125.88*ln(l_km)+408.64; ag = 264.62*ln(l_km)+1236.1. 
+Inductive status is pass when a >= required and no-pass when a < required. Thermal is no-pass for either underground class when min_distance < 5 m. 
+Capacitive is no-pass for aboveground when min_distance < 5 m. 
+Resistive is no-pass for underground >24 kV when min_distance < 30 m. In addition, influenced geometry intersecting a 50 m buffer around any Mast is resistive no-pass. 
+Missing calculated status defaults to pass when written to the assessed population.
+
+Input:
+    Reads KLIC_temp18.gpkg.
+Output:
+    KLIC_temp19.gpkg containing physical layers plus step1_reference_assessments, step1_influenced_assessments and nen_assessment_storage metadata.
+"""
 from pathlib import Path
 
 import geopandas as gpd
@@ -81,6 +92,23 @@ def _normalise_text_series(series, *, lowercase=False):
         index=series.index,
         dtype=object,
         name=series.name,
+    )
+
+
+def _pipeline_aboveground_within_5m(gdf):
+    """Return whether each influenced pipeline part meets the capacitive rule."""
+    vertical_position = _normalise_text_series(
+        gdf["verticalePositie"],
+        lowercase=True,
+    )
+    min_distance = pd.to_numeric(
+        gdf["min_distance"],
+        errors="coerce",
+    )
+
+    return (
+        vertical_position.eq("aboveground")
+        & min_distance.lt(5)
     )
 
 
@@ -293,6 +321,7 @@ def step1_nen(input_path, output_path):
         "influenced_run_id",
         "influencer_class",
         "min_distance",
+        "verticalePositie",
     ]
 
 
@@ -639,16 +668,54 @@ def step1_nen(input_path, output_path):
             gdf["inductive"] = gdf["inductive"].fillna("pass")
 
     # ============================================================
+    # CAPACITIVE PIPELINE CONDITION
+    # ============================================================
+    #
+    # Capacitive influence applies only when the influenced pipeline
+    # itself is aboveground and is less than 5 m from the influencer.
+    # Keep a per-row mask for the influenced layer and a per-run lookup
+    # for the corresponding HV/cable assessment rows.
+    # ============================================================
+
+    influenced_capacitive_condition = (
+        _pipeline_aboveground_within_5m(influenced_gdf)
+    )
+
+    capacitive_condition_by_run = (
+        pd.DataFrame(
+            {
+                "influenced_run_id": influenced_gdf[
+                    "influenced_run_id"
+                ],
+                "capacitive_condition": (
+                    influenced_capacitive_condition
+                ),
+            }
+        )
+        .dropna(subset=["influenced_run_id"])
+        .groupby("influenced_run_id")["capacitive_condition"]
+        .any()
+    )
+
+    def reference_capacitive_condition(gdf):
+        return (
+            gdf["influenced_run_id"]
+            .map(capacitive_condition_by_run)
+            .fillna(False)
+            .astype(bool)
+        )
+
+    # ============================================================
     # HELPER FUNCTION:
     # CALCULATE THERMAL / CAPACITIVE / RESISTIVE
     # ============================================================
 
     def calculate_thermal_capacitive_resistive(
-        gdf
+        gdf,
+        capacitive_pipeline_condition,
     ):
         """
-        Calculate thermal, capacitive and resistive status
-        from influencer_class and min_distance.
+        Calculate thermal, capacitive and resistive status.
 
         Rules:
 
@@ -661,7 +728,8 @@ def step1_nen(input_path, output_path):
 
         CAPACITIVE:
             ag
-            AND min_distance < 5
+            AND the influenced pipeline is aboveground
+            AND its min_distance < 5
                 -> no-pass
 
             Otherwise -> pass
@@ -675,6 +743,10 @@ def step1_nen(input_path, output_path):
         """
 
         gdf = gdf.copy()
+        capacitive_pipeline_condition = pd.Series(
+            capacitive_pipeline_condition,
+            index=gdf.index,
+        ).fillna(False).astype(bool)
 
         # --------------------------------------------------------
         # Make sure min_distance is numeric
@@ -712,7 +784,7 @@ def step1_nen(input_path, output_path):
 
         capacitive_no_pass = (
             gdf["influencer_class"].eq("ag")
-            & min_distance.lt(5)
+            & capacitive_pipeline_condition
         )
 
         gdf["capacitive"] = "pass"
@@ -787,16 +859,19 @@ def step1_nen(input_path, output_path):
 
     if hv_gdf is not None:
         hv_gdf = calculate_thermal_capacitive_resistive(
-            hv_gdf
+            hv_gdf,
+            reference_capacitive_condition(hv_gdf),
         )
 
     if cable_gdf is not None:
         cable_gdf = calculate_thermal_capacitive_resistive(
-            cable_gdf
+            cable_gdf,
+            reference_capacitive_condition(cable_gdf),
         )
 
     influenced_gdf = calculate_thermal_capacitive_resistive(
-        influenced_gdf
+        influenced_gdf,
+        influenced_capacitive_condition,
     )
 
 

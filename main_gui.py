@@ -1,3 +1,12 @@
+"""
+main_gui
+
+Starts the PySide6 desktop application, creates QApplication and NEN3654App, and enters the Qt event loop.
+
+Input:
+    Application entry point; it does not alter GIS data.
+
+"""
 from __future__ import annotations
 import sys
 from pathlib import Path

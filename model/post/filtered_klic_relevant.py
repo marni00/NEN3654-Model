@@ -1,5 +1,17 @@
-# Script 22: Filtered and cleaned on relevance
+"""
+filtered_klic_relevant
 
+Creates a GIS-readable dataset of the features and relationships that remained relevant through Part 2 before the Step 1 assessment.
+Reads physical geometry and normalized run tables from KLIC_temp18.gpkg, restores native IDs/FIDs where possible, 
+merges records by persistent id where the export contract requires one feature, and prepares separate influencer/influenced relationship views. 
+It uses unique export indexes to avoid key collisions and attaches relationship attributes such as run_id and influenced_run_id without modifying the source GeoPackage.
+
+Input:
+    KLIC_temp18.gpkg.
+
+Output:
+    KLIC_filtered.gpkg.
+"""
 import sqlite3
 from pathlib import Path
 

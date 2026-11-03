@@ -1,4 +1,16 @@
-#Script 14
+"""
+filter_features_run_length
+
+Removes run memberships whose influenced conduit component is shorter than the minimum length for the reference class.
+Determines one influencer_class per run_id from the reference layers, summarizes each influenced_run_id's component length, and flags it when length is below the class threshold. 
+Membership rows for short subruns are removed. A reference run is removed only when it has no surviving influenced_run_id. 
+The influenced geometry layer is reduced to parts that still have at least one surviving membership.
+
+Input:
+    Reads KLIC_temp13.gpkg and influenced_runid_links.csv.
+Output:
+    Writes KLIC_temp14.gpkg and influenced_runid_links_no_short_runlength.csv.
+"""
 from pathlib import Path
 from collections.abc import Mapping
 

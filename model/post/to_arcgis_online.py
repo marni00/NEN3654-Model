@@ -1,3 +1,16 @@
+"""
+to_arcgis_online
+
+Publishes result GeoPackages to ArcGIS Online or an ArcGIS Enterprise portal and applies configured symbology.
+Connects through the ArcGIS Python API, derives a dataset/location name, uploads each GeoPackage, publishes hosted feature layers and applies renderer definitions. 
+Renderers include standard line/point symbols, no-pass styling, voltage classes and infrastructure-type categories. Existing field names are inspected before renderer selection.
+
+Input:
+    output GeoPackages, portal URL, username/password and symbology JSON.
+
+Output:
+    hosted ArcGIS items and a result summary.
+"""
 import json
 import shutil
 import tempfile

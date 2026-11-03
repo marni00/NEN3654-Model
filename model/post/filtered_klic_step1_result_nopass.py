@@ -1,4 +1,16 @@
-# Script 23: Filtered no-pass after step 1
+"""
+filtered_klic_step1_result_nopass
+
+Exports only Step 1 failures and dissolves related failure geometry into practical GIS groups.
+A feature can appear in more than one thematic no-pass layer when it fails multiple assessment types. Grouping follows identifying attributes, not merely spatial contact.
+
+Input:
+    KLIC_temp19.gpkg.
+
+Output:
+    KLIC_no_pass_step1.gpkg. The no_pass_inductive layer is also the validated population basis for Step 2.
+"""
+
 import sqlite3
 from pathlib import Path
 

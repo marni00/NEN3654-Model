@@ -1,3 +1,12 @@
+"""
+setup_panel
+
+Builds tabs for Part 1, NEN Step 1, NEN Step 2, ArcGIS upload and FileGDB combination. Collects paths/settings and invokes controller actions.
+
+Input:
+    Primary workflow input UI.
+"""
+
 from __future__ import annotations
 from pathlib import Path
 from PySide6.QtCore import Qt
@@ -52,7 +61,7 @@ class SetupPanel(QTabWidget):
 
     def _build_filtering(self) -> None:
         layout = self._content(self.filtering_tab)
-        layout.addWidget(section_title("Ruwe KLIC-dataset"))
+        layout.addWidget(section_title("Raw KLIC-dataset"))
         self.input_path = PathChooser("GeoPackage…", self._browse_input)
         layout.addWidget(self.input_path)
         input_actions = QHBoxLayout()
@@ -63,19 +72,19 @@ class SetupPanel(QTabWidget):
         input_actions.addWidget(self.input_gdb_button)
         layout.addLayout(input_actions)
         self.input_help = muted_label(
-            "Selecteer de ruwe KLIC-dataset als GeoPackage (.gpkg) "
-            "of Esri File Geodatabase (.gdb)."
+            "Select the raw KLIC-dataset as a GeoPackage (.gpkg) "
+            "or an Esri File Geodatabase (.gdb)."
         )
         layout.addWidget(self.input_help)
 
-        group = QGroupBox("Voorgestelde hoogspanning")
+        group = QGroupBox("Proposed High Voltage")
         form = QFormLayout(group)
-        self.proposed_enabled = QCheckBox("Voorgestelde hoogspanning toevoegen")
+        self.proposed_enabled = QCheckBox("Add Proposed High Voltage")
         self.proposed_enabled.setChecked(self.state.proposed_hv.enabled)
         self.proposed_enabled.toggled.connect(self._sync_filtering)
         form.addRow(self.proposed_enabled)
-        self.proposed_path = PathChooser("Bronbestand…", self._browse_proposed)
-        form.addRow("Geometrie", self.proposed_path)
+        self.proposed_path = PathChooser("Source File…", self._browse_proposed)
+        form.addRow("Geometry", self.proposed_path)
         self.code = QLineEdit(self.state.proposed_hv.code)
         self.code.editingFinished.connect(self._sync_filtering)
         form.addRow("Code", self.code)
@@ -83,22 +92,22 @@ class SetupPanel(QTabWidget):
         self.position.addItems(["underground", "aboveground"])
         self.position.setCurrentText(self.state.proposed_hv.vertical_position)
         self.position.currentTextChanged.connect(self._sync_filtering)
-        form.addRow("Verticale positie", self.position)
+        form.addRow("Vertical Position", self.position)
         self.voltage = QSpinBox()
         self.voltage.setRange(1, 2_000_000)
         self.voltage.setValue(self.state.proposed_hv.work_voltage)
         self.voltage.valueChanged.connect(self._sync_filtering)
-        form.addRow("Werkspanning (V)", self.voltage)
+        form.addRow("Work Voltage (V)", self.voltage)
         layout.addWidget(group)
 
         self.filtering_button = QPushButton("Start NEN3654 Filtering")
         self.filtering_button.clicked.connect(self.start_filtering)
         layout.addWidget(self.filtering_button)
         layout.addSpacing(SPACING["md"])
-        layout.addWidget(section_title("Optioneel: KLIC FileGDB's combineren"))
+        layout.addWidget(section_title("Optional: Combine KLIC FileGDB"))
         layout.addWidget(muted_label(
-            "Los hulpmiddel buiten de NEN 3654-workflow. Gelijknamige lagen worden "
-            "samengevoegd; alleen features met gelijke geometrie én attributen gelden als duplicaat."
+            "Seperate tool from NEN 3654-workflow. Merge layers with equal names and geometry types. " \
+            "Layers with equal names and geometry types are merged; only features with equal geometry AND attributes count as duplicates."
         ))
         self.gdb_button = QPushButton("FileGDB's combineren…")
         self.gdb_button.setProperty("secondary", True)
@@ -108,24 +117,24 @@ class SetupPanel(QTabWidget):
 
     def _build_processing(self) -> None:
         layout = self._content(self.processing_tab)
-        layout.addWidget(section_title("Invoer Part 2 · uitvoer Part 1"))
-        self.part2_path = PathChooser("Part 1-resultaat…", self._browse_part2)
+        layout.addWidget(section_title("Input Part 2 · Output Part 1"))
+        self.part2_path = PathChooser("Part 1-result…", self._browse_part2)
         layout.addWidget(self.part2_path)
         self.part2_help = muted_label(
-            "Na Filtering wordt de aangemaakte KLIC_temp9.gpkg automatisch als "
-            "basisinvoer gebruikt. Alleen voor een eerdere run hoeft u handmatig "
-            "KLIC_temp9.gpkg te selecteren; KLIC_temp5.gpkg moet dan in dezelfde map staan."
+            "After Filtering the output KLIC_temp9.gpkg are used automatically as "
+            "base input. Only for earlyer runs you need to select KLIC_temp9.gpkg manually; "
+            "KLIC_temp5.gpkg has to be in the same folder."
         )
         layout.addWidget(self.part2_help)
-        layout.addWidget(section_title("Selectieregels voor NEN stap 1"))
+        layout.addWidget(section_title("Selection rules for NEN step 1"))
         layout.addWidget(muted_label(
-            "Selecteer minimaal één buisleiding. Elektriciteitskabel en "
-            "proposed_highvoltage zijn expliciet selecteerbaar. Per buisleidinglaag "
-            "kan Samenvoegen worden geactiveerd. Kabelcodes zijn voor stap 1 nog niet nodig."
+            "Select at least one pipeline. Electric cable and "
+            "proposed_highvoltage are explicitly selectable. For each pipeline layer "
+            "merging can be activated. Cable codes are not needed for step 1."
         ))
-        self.processing_summary = muted_label("Nog geen Part 1-resultaat geladen.")
+        self.processing_summary = muted_label("No Part 1-result loaded.")
         layout.addWidget(self.processing_summary)
-        self.processing_button = QPushButton("Start NEN 3654 stap 1")
+        self.processing_button = QPushButton("Start NEN 3654 step 1")
         self.processing_button.clicked.connect(self.start_processing)
         layout.addWidget(self.processing_button)
         layout.addStretch()
@@ -133,21 +142,20 @@ class SetupPanel(QTabWidget):
 
     def _build_step2(self) -> None:
         layout = self._content(self.step2_tab)
-        layout.addWidget(section_title("Invoer Part 2 · uitvoer Part 2"))
-        self.step2_input_path = PathChooser("NEN stap 1-resultaat…", self._browse_step2_input)
+        layout.addWidget(section_title("Input Part 2 · Output Part 2"))
+        self.step2_input_path = PathChooser("NEN step 1-result…", self._browse_step2_input)
         layout.addWidget(self.step2_input_path)
         self.step2_input_help = muted_label(
-            "Na NEN stap 1 wordt KLIC_temp19.gpkg automatisch gebruikt. "
-            "Om een eerdere run te vervolgen selecteert u handmatig KLIC_temp19.gpkg; "
-            "KLIC_temp9.gpkg moet in dezelfde map staan."
+            "After NEN step 1, KLIC_temp19.gpkg is used automatically. "
+            "To continue a previous run, select KLIC_temp19.gpkg manually; "
+            "KLIC_temp9.gpkg must be in the same folder."
         )
         layout.addWidget(self.step2_input_help)
 
-        layout.addWidget(section_title("Resterende elektriciteitskabels"))
+        layout.addWidget(section_title("Remaining electric cables"))
         layout.addWidget(muted_label(
-            "Na stap 1 worden hier uitsluitend de elektriciteitskabels getoond "
-            "die nog voor stap 2 relevant zijn. Code wordt gekoppeld aan dezelfde "
-            "persistente ID als in de bestaande workflow."
+            "After step 1, only the electric cables relevant for step 2 are shown. The code is linked to the same "
+            "persistent ID as in the existing workflow."
         ))
         self.step2_tree = QTreeWidget()
         self.step2_tree.setColumnCount(2)
@@ -160,7 +168,7 @@ class SetupPanel(QTabWidget):
         row = QHBoxLayout()
         row.addWidget(QLabel("Code"))
         self.step2_code = QComboBox()
-        self.step2_code.addItem("Selecteer Code…", "")
+        self.step2_code.addItem("Select Code…", "")
         try:
             for code in load_step2_codes(
                 self.state.project_root / "utils" / "Step2_Table.csv"
@@ -169,39 +177,39 @@ class SetupPanel(QTabWidget):
         except (OSError, ValueError) as error:
             self.step2_code.setToolTip(str(error))
         row.addWidget(self.step2_code, 1)
-        self.assign_step2_code_button = QPushButton("Code toewijzen")
+        self.assign_step2_code_button = QPushButton("Assign Code")
         self.assign_step2_code_button.clicked.connect(self._assign_step2_code)
         row.addWidget(self.assign_step2_code_button)
         layout.addLayout(row)
 
-        self.remove_step2_code_button = QPushButton("Uit Codegroep verwijderen")
+        self.remove_step2_code_button = QPushButton("Remove from Code Group")
         self.remove_step2_code_button.setProperty("secondary", True)
         self.remove_step2_code_button.clicked.connect(self._remove_step2_code)
         layout.addWidget(self.remove_step2_code_button)
 
-        self.step2_summary = muted_label("Voer eerst NEN 3654 stap 1 uit.")
+        self.step2_summary = muted_label("Run NEN 3654 step 1 first.")
         layout.addWidget(self.step2_summary)
-        self.step2_button = QPushButton("Start NEN 3654 stap 2")
+        self.step2_button = QPushButton("Start NEN 3654 step 2")
         self.step2_button.clicked.connect(self.start_step2)
         layout.addWidget(self.step2_button)
         layout.addStretch()
 
     def _build_upload(self) -> None:
         layout = self._content(self.upload_tab)
-        layout.addWidget(section_title("ArcGIS-resultaten"))
-        self.upload_path = PathChooser("Outputmap…", self._browse_upload)
+        layout.addWidget(section_title("ArcGIS-results"))
+        self.upload_path = PathChooser("Output folder…", self._browse_upload)
         layout.addWidget(self.upload_path)
-        self.upload_help = muted_label("Selecteer een outputmap of gebruik de resultaten van de huidige run.")
+        self.upload_help = muted_label("Select an output folder or use the results from the current run.")
         layout.addWidget(self.upload_help)
         form = QFormLayout()
         self.portal = QLineEdit(self.state.arcgis.portal_url)
         self.username = QLineEdit(self.state.arcgis.username)
         form.addRow("Portal", self.portal)
         form.addRow("", muted_label('Sweco: "https://ggc.maps.arcgis.com"'))
-        form.addRow("Gebruikersnaam", self.username)
-        form.addRow("", muted_label('"voornaam.achternaam@sweco.nl"'))
+        form.addRow("Username", self.username)
+        form.addRow("", muted_label('"firstname.lastname@sweco.nl"'))
         layout.addLayout(form)
-        self.upload_button = QPushButton("Upload naar ArcGIS Online")
+        self.upload_button = QPushButton("Upload to ArcGIS Online")
         self.upload_button.setProperty("secondary", True)
         self.upload_button.clicked.connect(self.on_upload)
         layout.addWidget(self.upload_button)
@@ -260,14 +268,14 @@ class SetupPanel(QTabWidget):
         self.state.notify()
 
     def _browse_input(self) -> None:
-        filename, _ = QFileDialog.getOpenFileName(self, "Selecteer ruwe KLIC GeoPackage", "", "GeoPackage (*.gpkg)")
+        filename, _ = QFileDialog.getOpenFileName(self, "Select raw KLIC GeoPackage", "", "GeoPackage (*.gpkg)")
         if filename:
             self._set_part1_input(Path(filename))
 
     def _browse_input_gdb(self) -> None:
         folder = QFileDialog.getExistingDirectory(
             self,
-            "Selecteer ruwe KLIC File Geodatabase",
+            "Select raw KLIC File Geodatabase",
         )
         if folder:
             self._set_part1_input(Path(folder))
@@ -279,7 +287,7 @@ class SetupPanel(QTabWidget):
         self.input_help.style().polish(self.input_help)
 
     def _browse_part2(self) -> None:
-        filename, _ = QFileDialog.getOpenFileName(self, "Selecteer KLIC_temp9.gpkg", "", "GeoPackage (*.gpkg)")
+        filename, _ = QFileDialog.getOpenFileName(self, "Select KLIC_temp9.gpkg", "", "GeoPackage (*.gpkg)")
         if filename:
             valid, message = self.controller.choose_part2_input(Path(filename))
             self.part2_help.setText(message)
@@ -289,7 +297,7 @@ class SetupPanel(QTabWidget):
     def _browse_step2_input(self) -> None:
         filename, _ = QFileDialog.getOpenFileName(
             self,
-            "Selecteer KLIC_temp19.gpkg",
+            "Select KLIC_temp19.gpkg",
             "",
             "GeoPackage (*.gpkg)",
         )
@@ -300,7 +308,7 @@ class SetupPanel(QTabWidget):
             self.step2_input_help.style().polish(self.step2_input_help)
 
     def _browse_upload(self) -> None:
-        folder = QFileDialog.getExistingDirectory(self, "Selecteer map met ArcGIS-resultaten")
+        folder = QFileDialog.getExistingDirectory(self, "Select output folder with ArcGIS results")
         if folder:
             valid, message = self.controller.choose_upload_output(Path(folder))
             self.upload_help.setText(message)
@@ -309,8 +317,8 @@ class SetupPanel(QTabWidget):
 
     def _browse_proposed(self) -> None:
         filename, _ = QFileDialog.getOpenFileName(
-            self, "Selecteer voorgestelde hoogspanningsgeometrie", "",
-            "GIS-bestanden (*.shp *.gpkg)"
+            self, "Select proposed high voltage geometry", "",
+            "GIS files (*.shp *.gpkg)"
         )
         if filename:
             self.state.proposed_hv.source_path = Path(filename).resolve()
@@ -320,22 +328,22 @@ class SetupPanel(QTabWidget):
     def _combine_gdbs(self) -> None:
         inputs = []
         while True:
-            folder = QFileDialog.getExistingDirectory(self, "Selecteer een invoer-FileGDB")
+            folder = QFileDialog.getExistingDirectory(self, "Select raw KLIC File Geodatabase")
             if not folder:
                 break
             path = Path(folder).resolve()
             if path.suffix.lower() != ".gdb":
-                QMessageBox.warning(self, "FileGDB combineren", "Selecteer een map die eindigt op .gdb.")
+                QMessageBox.warning(self, "Combine FileGDB", "Select folder that ends with .gdb.")
                 continue
             if path not in inputs:
                 inputs.append(path)
-            if QMessageBox.question(self, "FileGDB combineren", "Nog een FileGDB toevoegen?") != QMessageBox.StandardButton.Yes:
+            if QMessageBox.question(self, "Combine FileGDB", "Add additional FileGDB?") != QMessageBox.StandardButton.Yes:
                 break
         if len(inputs) < 2:
             if inputs:
-                QMessageBox.warning(self, "FileGDB combineren", "Selecteer minimaal twee File Geodatabases.")
+                QMessageBox.warning(self, "Combine FileGDB", "Select at least two File Geodatabases.")
             return
-        output, _ = QFileDialog.getSaveFileName(self, "Kies de uitvoer-FileGDB", "", "Esri File Geodatabase (*.gdb)")
+        output, _ = QFileDialog.getSaveFileName(self, "Select output FileGDB", "", "Esri File Geodatabase (*.gdb)")
         if not output:
             return
         target = Path(output).resolve()
@@ -344,7 +352,7 @@ class SetupPanel(QTabWidget):
         overwrite = False
         if target.exists():
             overwrite = QMessageBox.question(
-                self, "Uitvoer overschrijven", f"{target}\n\nVolledig overschrijven?"
+                self, "Overwrite Output", f"{target}\n\nOverwrite completely?"
             ) == QMessageBox.StandardButton.Yes
             if not overwrite:
                 return
@@ -388,8 +396,8 @@ class SetupPanel(QTabWidget):
         conduits = sum(k.layer in CONDUIT_LAYERS for k in self.state.selected_for_analysis)
         influencers = sum(k.layer in INFLUENCER_LAYERS for k in self.state.selected_for_analysis)
         self.processing_summary.setText(
-            f"{conduits} buisleiding(en) en {influencers} elektriciteits-/hoogspanningsfeature(s) geselecteerd."
-            if self.state.features else "Nog geen Part 1-resultaat geladen."
+            f"{conduits} conduit(s) and {influencers} electricity/high voltage feature(s) selected."
+            if self.state.features else "No Part 1 results loaded."
         )
 
         self._refresh_step2_tree()
@@ -405,9 +413,9 @@ class SetupPanel(QTabWidget):
             if key.persistent_id is not None
         }
         self.step2_summary.setText(
-            f"{candidate_count} kabel-ID(s) over na stap 1; "
-            f"{len(assigned_ids)} ID(s) hebben een Code."
-            if step2_ready else "Voer eerst NEN 3654 stap 1 uit."
+            f"{candidate_count} cable ID(s) remaining after step 1; "
+            f"{len(assigned_ids)} ID(s) have a Code."
+            if step2_ready else "Please run NEN 3654 step 1 first."
         )
         has_step2_code = bool(self.state.cable_groups) or (
             self.state.proposed_hv.enabled and bool(self.state.proposed_hv.code.strip())

@@ -1,3 +1,11 @@
+"""
+controller
+
+Owns GUI workflow state. It validates selected inputs, creates isolated run workspaces, writes runtime TOML, starts/cancels background tasks, loads result datasets, manages map visibility and feature selection, and maintains cable groups.
+
+Input:
+    Calls BackendAdapter for Part 1, split Part 2, FileGDB combination and upload. GIS calculations remain in model modules.
+"""
 from __future__ import annotations
 
 import re
@@ -81,8 +89,8 @@ class WorkflowController:
         if not temp5_source.is_file():
             return (
                 False,
-                "KLIC_temp5.gpkg ontbreekt naast het gekozen Part 1-resultaat. "
-                "Dit tussenbestand is nodig om na Processing de ArcGIS-resultaten voor te bereiden.",
+                "KLIC_temp5.gpkg missing from folder of Part 1-result. "
+                "This intermediate file is needed to prepare the ArcGIS results after processing.",
             )
 
         existing_workspace = self._gui_workspace_for_part2_input(path)
@@ -104,7 +112,7 @@ class WorkflowController:
         except Exception as error:
             if created_workspace and workspace is not None:
                 shutil.rmtree(workspace, ignore_errors=True)
-            return False, f"Het Part 1-resultaat kon niet worden geladen: {error}"
+            return False, f"Part 1-result could not be loaded: {error}"
 
         # A KLIC_temp9.gpkg selected from data/gui_runs keeps using that exact
         # run. Part 2 intermediates and outputs therefore stay with Part 1.
@@ -126,9 +134,9 @@ class WorkflowController:
         self.state.overlapping_features = ()
         self.state.stage = WorkflowStage.PART1_READY
         self.state.status = (
-            f"Part 1-resultaat geladen: {len(features)} features. "
-            "Elektriciteitskabels en voorgestelde hoogspanning zijn vooraf geselecteerd "
-            "en kunnen in het tabblad Selectie worden uitgevinkt."
+            f"Part 1-result loaded: {len(features)} features. "
+            "Electricity cables and proposed high voltage are pre-selected "
+            "and can be deselected in the Selection tab."
         )
         self.state.error_summary = None
         self.state.error_detail = None
@@ -144,14 +152,14 @@ class WorkflowController:
         if not valid:
             return False, message
         if path.name != "KLIC_temp19.gpkg":
-            return False, "Selecteer de uitvoer van NEN stap 1: KLIC_temp19.gpkg."
+            return False, "Select the output of NEN step 1: KLIC_temp19.gpkg."
 
         temp9_source = path.with_name("KLIC_temp9.gpkg")
         if not temp9_source.is_file():
             return (
                 False,
-                "KLIC_temp9.gpkg ontbreekt naast KLIC_temp19.gpkg. "
-                "Dit bestand is nodig voor de persistente IDs en de kaartselectie.",
+                "KLIC_temp9.gpkg missing from folder of Part 1-result. "
+                "This file is needed for the persistent IDs and the map selection.",
             )
 
         existing_workspace = self._gui_workspace_for_model_input(
@@ -202,7 +210,7 @@ class WorkflowController:
         except Exception as error:
             if created_workspace and workspace is not None:
                 shutil.rmtree(workspace, ignore_errors=True)
-            return False, f"De uitvoer van NEN stap 1 kon niet worden geladen: {error}"
+            return False, f"The output of NEN step 1 could not be loaded: {error}"
 
         self.state.part2_input_path = part2_input
         self.state.step2_input_path = step2_input
@@ -223,8 +231,8 @@ class WorkflowController:
         self.state.upload_output_dir = workspace / "output"
         self.state.stage = WorkflowStage.STEP1_READY
         self.state.status = (
-            f"Eerdere uitvoer van NEN stap 1 geladen: {len(candidate_ids)} "
-            "elektriciteitskabel-ID(s) kunnen een Code krijgen voor stap 2."
+            f"Previous output of NEN step 1 loaded: {len(candidate_ids)} "
+            "electricity cable ID(s) can receive a Code for step 2."
         )
         self.state.error_summary = None
         self.state.error_detail = None
@@ -236,13 +244,13 @@ class WorkflowController:
     def choose_upload_output(self, path: Path) -> tuple[bool, str]:
         path = path.resolve()
         if not path.is_dir():
-            return False, "Selecteer een bestaande outputmap."
+            return False, "Select an existing output directory."
         geopackages = sorted(path.glob("*.gpkg"))
         if not geopackages:
-            return False, "De geselecteerde map bevat geen GeoPackage-resultaten."
+            return False, "The selected directory contains no GeoPackage results."
         self.state.upload_output_dir = path
         self.state.status = (
-            f"ArcGIS-outputmap geladen: {len(geopackages)} GeoPackage-bestand(en)."
+            f"ArcGIS output directory loaded: {len(geopackages)} GeoPackage file(s)."
         )
         self.state.error_summary = None
         self.state.error_detail = None
@@ -294,14 +302,14 @@ class WorkflowController:
             self.state.overlapping_features = ()
             self.state.stage = WorkflowStage.PART1_READY
             self.state.status = (
-                f"Filtering gereed: {len(features)} features geladen. "
-                "Elektriciteitskabels en voorgestelde hoogspanning zijn vooraf geselecteerd "
-                "en kunnen in het tabblad Selectie worden uitgevinkt."
+                f"Filtering finished: {len(features)} features loaded. "
+                "Electricity cables and proposed high voltage are pre-selected "
+                "and can be deselected in the Selection tab."
             )
             self.state.dirty = False
             self._notify_features_changed()
 
-        self._start_task("NEN3654 Filtering", "Part 1 uitvoeren...", work, success)
+        self._start_task("NEN3654 Filtering", "Execute Part 1...", work, success)
 
     def run_part2_step1(self) -> None:
         if self.state.busy or self.state.stage not in {
@@ -317,12 +325,12 @@ class WorkflowController:
         }
         if not selected_conduits:
             self._fail_validation(
-                "Selecteer minimaal één buisleiding voor NEN 3654 stap 1."
+                "Select at least one conduit for NEN 3654 step 1."
             )
             return
         if self.state.workspace_dir is None:
             self._fail_validation(
-                "De Processing-werkmap ontbreekt. Selecteer een Part 1-resultaat "
+                "The Processing workspace directory is missing. Select a Part 1 result "
                 "of voer Filtering uit."
             )
             return
@@ -330,8 +338,8 @@ class WorkflowController:
         part2_input = self.state.workspace_dir / "temp" / "KLIC_temp9.gpkg"
         if not part2_input.is_file():
             self._fail_validation(
-                "De uitvoer van Part 1 ontbreekt: KLIC_temp9.gpkg kan niet als "
-                "invoer voor NEN 3654 stap 1 worden gebruikt."
+                "The output of Part 1 is missing: KLIC_temp9.gpkg cannot be used as "
+                "input for NEN 3654 step 1."
             )
             return
         self.state.part2_input_path = part2_input
@@ -376,16 +384,16 @@ class WorkflowController:
             self.state.cable_groups.clear()
             self.state.stage = WorkflowStage.STEP1_READY
             self.state.status = (
-                f"NEN 3654 stap 1 gereed: {len(outputs)} resultaatbestanden. "
-                f"{len(candidate_ids)} elektriciteitskabel-ID(s) blijven over "
-                "voor mogelijke Code-toewijzing in stap 2."
+                f"NEN 3654 step 1 ready: {len(outputs)} result file(s). "
+                f"{len(candidate_ids)} electricity cable ID(s) remain "
+                "for potential Code assignment in step 2."
             )
             self.state.dirty = False
             self._notify_features_changed()
 
         self._start_task(
-            "NEN 3654 stap 1",
-            "Gebruikersselectie voor stap 1 verwerken...",
+            "NEN 3654 step 1",
+            "Execute step 1...",
             work,
             success,
         )
@@ -397,7 +405,7 @@ class WorkflowController:
         }:
             return
         if self.state.workspace_dir is None:
-            self._fail_validation("De werkmap van NEN 3654 stap 1 ontbreekt.")
+            self._fail_validation("The workspace directory for NEN 3654 step 1 is missing.")
             return
 
         has_proposed_code = (
@@ -406,15 +414,15 @@ class WorkflowController:
         )
         if not self.state.cable_groups and not has_proposed_code:
             self._fail_validation(
-                "Wijs minimaal één Code toe aan een resterende "
-                "elektriciteitskabel voordat u NEN 3654 stap 2 start."
+                "Assign at least one Code to a remaining "
+                "electricity cable before starting NEN 3654 step 2."
             )
             return
 
         step1_output = self.state.workspace_dir / "temp" / "KLIC_temp19.gpkg"
         if not step1_output.is_file():
             self._fail_validation(
-                "De uitvoer van NEN 3654 stap 1 ontbreekt: KLIC_temp19.gpkg."
+                "The output of NEN 3654 step 1 is missing: KLIC_temp19.gpkg."
             )
             return
 
@@ -448,15 +456,15 @@ class WorkflowController:
             self.state.upload_output_dir = self.state.workspace_dir / "output"
             self.state.stage = WorkflowStage.PART2_READY
             self.state.status = (
-                f"NEN 3654 stap 2 gereed: {len(outputs)} nieuwe resultaatbestanden. "
-                "Schakel een resultaatlaag in via de legenda om deze op de kaart te laden."
+                f"NEN 3654 step 2 ready: {len(outputs)} new result file(s). "
+                "Switch a result layer on via the legend to load it on the map."
             )
             self.state.dirty = False
             self._notify_features_changed()
 
         self._start_task(
-            "NEN 3654 stap 2",
-            "Codes verwerken en NEN 3654 stap 2 uitvoeren...",
+            "NEN 3654 step 2",
+            "Processing codes and executing NEN 3654 step 2...",
             work,
             success,
         )
@@ -507,11 +515,11 @@ class WorkflowController:
 
         source = self.state.result_sources.get(dataset)
         if source is None:
-            self._fail_validation(f"Geen resultaatbestand beschikbaar voor {dataset}.")
+            self._fail_validation(f"No result file available for {dataset}.")
             return
         if layer not in self.state.result_layers.get(dataset, ()):
             self._fail_validation(
-                f"Laag {layer} is niet beschikbaar in resultaatbestand {source.name}."
+                f"Layer {layer} is not available in result file {source.name}."
             )
             return
 
@@ -532,14 +540,14 @@ class WorkflowController:
             self.state.map_bounds.update(bundle.bounds_by_layer)
             self.state.visible_result_layers.add(layer_key)
             self.state.status = (
-                f"Resultaatlaag geladen: {source.name} / {layer} "
+                f"Result layer loaded: {source.name} / {layer} "
                 f"({len(features)} features)."
             )
             self._notify_features_changed()
 
         self._start_task(
-            "Resultaatlaag laden",
-            f"Resultaatlaag laden: {source.name} / {layer}",
+            "Load result layer",
+            f"Loading result layer: {source.name} / {layer}",
             work,
             success,
         )
@@ -566,14 +574,14 @@ class WorkflowController:
 
         def success(summary) -> None:
             self.state.status = (
-                f"FileGDB-combinatie gereed: {summary['layers']} laag/lagen, "
-                f"{summary['written']} features geschreven en "
-                f"{summary['duplicates']} duplicaten overgeslagen."
+                f"FileGDB combination ready: {summary['layers']} layer(s), "
+                f"{summary['written']} features written and "
+                f"{summary['duplicates']} duplicates skipped."
             )
 
         self._start_task(
-            "FileGDB's combineren",
-            "File Geodatabases combineren...",
+            "Combine FileGDBBs",
+            "Combining File Geodatabases...",
             work,
             success,
         )
@@ -582,14 +590,14 @@ class WorkflowController:
         if self.state.busy or not self.state.upload_ready:
             return
         if not portal_url.strip() or not username.strip() or not password:
-            self._fail_validation("Portal, gebruikersnaam en wachtwoord zijn verplicht.")
+            self._fail_validation("Portal, username and password are required.")
             return
 
         self.state.arcgis.portal_url = portal_url.strip()
         self.state.arcgis.username = username.strip()
         output_dir = self.state.upload_output_dir
         if output_dir is None:
-            self._fail_validation("De ArcGIS-outputmap ontbreekt.")
+            self._fail_validation("The ArcGIS output directory is missing.")
             return
 
         def work():
@@ -607,13 +615,13 @@ class WorkflowController:
             successful = result.get("successful", [])
             if failed:
                 self.state.status = (
-                    f"Upload deels gereed: {len(successful)} gelukt, "
-                    f"{len(failed)} mislukt."
+                    f"Upload partially complete: {len(successful)} successful, "
+                    f"{len(failed)} failed."
                 )
             else:
-                self.state.status = f"Upload gereed: {len(successful)} bestanden gepubliceerd."
+                self.state.status = f"Upload complete: {len(successful)} files published."
 
-        self._start_task("ArcGIS Online-upload", "Authenticeren...", work, success)
+        self._start_task("ArcGIS Online-upload", "Authenticating...", work, success)
 
     def cancel(self) -> None:
         if self.state.task_state != TaskState.RUNNING:
@@ -622,7 +630,7 @@ class WorkflowController:
         self.state.set_task(
             TaskState.CANCELLING,
             name=self.state.task_name,
-            status="Annuleren na de huidige backendstap...",
+            status="Cancelling after the current backend step...",
             progress=self.state.progress,
         )
 
@@ -762,17 +770,17 @@ class WorkflowController:
     ) -> None:
         """Assign one Code to Step 1 no-pass cables by persistent ID."""
         if self.state.busy:
-            raise ValueError("Kabelgroepen kunnen niet tijdens een actief proces worden gewijzigd.")
+            raise ValueError("Cable groups cannot be modified during an active process.")
         code = code.strip()
         if not code:
-            raise ValueError("Code mag niet leeg zijn.")
+            raise ValueError("Code cannot be empty.")
         if self.state.stage not in {
             WorkflowStage.STEP1_READY,
             WorkflowStage.PART2_READY,
         }:
             raise ValueError(
-                "Voer eerst NEN 3654 stap 1 uit; Codes kunnen alleen aan "
-                "de resterende elektriciteitskabels worden toegewezen."
+                "First execute NEN 3654 step 1; Codes can only be assigned to "
+                "the remaining electricity cables."
             )
 
         requested_ids = {
@@ -785,16 +793,15 @@ class WorkflowController:
         )
         if not valid_ids:
             raise ValueError(
-                "Selecteer minimaal één elektriciteitskabel die na stap 1 "
-                "voor stap 2 is overgebleven."
+                "Select at least one electricity cable that remains for step 2."
             )
 
         rejected_ids = requested_ids.difference(valid_ids)
         if rejected_ids:
             rejected = ", ".join(map(str, sorted(rejected_ids)))
             raise ValueError(
-                "De volgende elektriciteitskabel-ID(s) behoren niet tot de "
-                f"no-pass selectie van stap 1: {rejected}."
+                "The following electricity cable ID(s) do not belong to the "
+                f"no-pass selection of step 1: {rejected}."
             )
 
         updated_groups = {
@@ -991,7 +998,7 @@ class WorkflowController:
         )
 
     def _finish_failed(self, name: str, error: Exception, detail: str) -> None:
-        self.state.error_summary = f"{name} is mislukt: {error}"
+        self.state.error_summary = f"{name} failed: {error}"
         self.state.error_detail = detail
         self.state.set_task(
             TaskState.FAILED,
@@ -1004,7 +1011,7 @@ class WorkflowController:
         self.state.set_task(
             TaskState.CANCELLED,
             name=self.state.task_name,
-            status="Proces geannuleerd. Reeds afgeronde tussenstappen zijn niet als resultaat geladen.",
+            status="Process cancelled. Already completed intermediate steps are not loaded as results.",
             progress=None,
         )
 

@@ -1,3 +1,13 @@
+"""
+configuration
+
+Loads initial TOML settings and Step2_Table Codes, validates GUI configuration, and atomically writes per-run config.toml and selection.toml using persistent IDs and combine flags.
+
+Input:
+    Runtime configuration bridge; does not perform GIS operations.
+"""
+
+
 from __future__ import annotations
 
 import csv
@@ -30,14 +40,14 @@ def load_step2_codes(path: Path) -> tuple[str, ...]:
     """Load the allowed NEN Step 2 Codes in table order."""
     path = Path(path)
     if not path.is_file():
-        raise FileNotFoundError(f"NEN stap 2 Codetabel niet gevonden: {path}")
+        raise FileNotFoundError(f"NEN step 2 Code table not found: {path}")
 
     codes: list[str] = []
     seen: set[str] = set()
     with path.open("r", encoding="utf-8-sig", newline="") as stream:
         reader = csv.DictReader(stream, delimiter=";")
         if reader.fieldnames is None:
-            raise ValueError(f"NEN stap 2 Codetabel heeft geen kolomkoppen: {path}")
+            raise ValueError(f"NEN step 2 Code table has no column headers: {path}")
         code_column = next(
             (
                 name
@@ -47,7 +57,7 @@ def load_step2_codes(path: Path) -> tuple[str, ...]:
             None,
         )
         if code_column is None:
-            raise ValueError(f"NEN stap 2 Codetabel bevat geen kolom 'Code': {path}")
+            raise ValueError(f"NEN step 2 Code table has no 'Code' column: {path}")
 
         for row in reader:
             code = str(row.get(code_column, "") or "").strip().upper()
@@ -57,7 +67,7 @@ def load_step2_codes(path: Path) -> tuple[str, ...]:
             codes.append(code)
 
     if not codes:
-        raise ValueError(f"NEN stap 2 Codetabel bevat geen bruikbare Codes: {path}")
+        raise ValueError(f"NEN step 2 Code table contains no valid Codes: {path}")
     return tuple(codes)
 
 def is_automatic_part2_layer(layer: str) -> bool:
@@ -83,12 +93,12 @@ def load_initial_config(path: Path) -> ProposedHighVoltageConfig:
 def validate_configuration(config: ProposedHighVoltageConfig) -> list[str]:
     errors: list[str] = []
     if config.work_voltage <= 0:
-        errors.append("Werkspanning moet groter zijn dan 0.")
+        errors.append("Work voltage must be greater than 0.")
     if config.enabled:
         if not config.code.strip():
-            errors.append("Vul een Code in voor de voorgestelde hoogspanning.")
+            errors.append("Please enter a Code for the proposed high voltage.")
         if config.source_path is None or not config.source_path.is_file():
-            errors.append("Selecteer een geldig bronbestand voor voorgestelde hoogspanning.")
+            errors.append("Please select a valid source file for the proposed high voltage.")
     return errors
 
 

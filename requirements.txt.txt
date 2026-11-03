@@ -1,8 +1,0 @@
-pandas
-geopandas
-shapely
-pyogrio
-numpy
-PySide6
-pytest
-arcgis

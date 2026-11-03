@@ -1,4 +1,22 @@
-#Script 5
+"""
+
+combine_conduit_features
+
+In this script connected conduits are combined to larger features when their relevant properties are compatible
+
+For all layers except Mast and Elektriciteitskabel, features are grouped by their conducitvity, verticalePostitie, thema, utilityNetworkType, werkVoltage, buisDiameter and material_norm.
+All required grouping attributes must be non-null. Features are only connected from endpoint to endpoint. All other forms offeature relations or intersections are not connected
+
+Parameters:
+    Endpoint connection tolerance is set to 0.1m, pipeline diameter values must differ a maximum of 10mm. Other parameters must be an exact match.
+
+Input:
+    Reads KLIC_temp4.gpkg
+
+Output:
+    Writes KLIC_temp5.gpkg, Mast and Elektriciteitskabel are left unchanged
+
+"""
 from pathlib import Path
 from collections import deque
 

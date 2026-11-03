@@ -1,5 +1,20 @@
-#Script 3
+"""
 
+reorder_utility_types_and_vertical
+
+Routes Duct and Kabelbed records into standardized utility layers and normalizes vertical-position values.
+Duct and Kabelbed are redistributed according to utilityNetworkType
+
+Parameters:
+    Full overlap ratio is 0.999, tolerance is 0.001 map units(meters preferably)
+
+Input:
+    Reads KLIC_temp2.gpkg
+
+Output:
+    Writes KLIC_temp3.gpkg
+
+"""
 from pathlib import Path
 
 import pandas as pd

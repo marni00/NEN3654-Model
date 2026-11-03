@@ -1,3 +1,19 @@
+"""
+segment_features
+
+Selects the conduit features chosen by the user and retains only electrical influencers that can affect those selected conduits.
+selection.toml is read using persistent id values. 
+Required conduit tables are OlieGasChemicalienPijpleiding, Waterleiding, Rioolleiding and ThermischePijpleiding; Overig is optional. 
+Selected conduit records are written as-is, or all selected records in a layer can be unioned/line-merged when combine=true. 
+A combined record keeps the first record's scalar id and attributes, while source_ids records all persistent IDs. 
+Dissolved 550 m, 850 m and 1,610 m buffers are built around all selected conduit geometries. 
+Influencer records are optionally restricted by selected persistent IDs, then retained only when their inductive_theme matches the applicable buffer and their complete length meets the class threshold.
+
+Input:
+    Reads KLIC_temp9_codes.gpkg and selection.toml
+Output:
+    KLIC_temp9_selected.gpkg.
+"""
 from pathlib import Path
 import sqlite3
 import warnings

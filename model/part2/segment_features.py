@@ -1,4 +1,19 @@
-#Script 10
+"""
+segment_features
+
+Segments influencer and influenced linework into parts suitable for parallel matching and distance assessment.
+All valid geometries are transformed to one projected working CRS, multipart lines are exploded, non-line geometry is dropped, and feature_id is retained if present or otherwise created fro
+ines are pre-split at bends so flat-ended buffers also have caps at bend locations. 
+Only influencers within 50 m of any target are used to construct individual 5 m, 30 m and 50 m flat-buffer boundaries. 
+Long perpendicular cut lines are also created at influencer-part endpoints/bends. Influenced lines are split where they cross any of these boundaries and at bends; 
+influencer lines are split at bends only. part_no is assigned consecutively within feature_id and segment_length_m is calculated. 
+A combined Endpoints layer stores each segment's start and end.
+
+Input:
+    Reads KLIC_temp9_selected.gpkg
+Output:
+    Writes KLIC_temp10.gpkg with segmented layers and Endpoints.
+"""
 from pathlib import Path
 import time
 import math

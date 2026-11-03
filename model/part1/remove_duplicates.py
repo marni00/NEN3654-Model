@@ -1,5 +1,22 @@
-#Step 4
+"""
 
+remove_duplicates
+
+Removes topologically duplicate or almost fully covered features from the main utility layers while retaining all other input layers.
+Within each configured layer, valid geometries are grouped by the important attributes that exist: thema, utilityNetworkType, werkVoltage, buisDiameter and material_norm. Identical normalized WKB geometries, are linked as topologically equal. 
+Non-equal candidates are spatially indexed and tested for complete coverage. A smaller geometry is considered covered when its intersection measure is at least 99.9% of its own length or area. Connected duplicate/coverage components retain one top-level representative and remove equal alternatives and geometries covered by a retained feature.
+
+
+Parameters:
+    Full overlap ratio is 0.999, tolerance is 0.001 map units(meters preferably)
+
+Input:
+    Reads KLIC_temp3.gpkg
+
+Output:
+    Writes KLIC_temp4.gpkg, removal-counts csv and a duplicate report 
+
+"""
 from pathlib import Path
 from collections import defaultdict, deque
 from itertools import combinations

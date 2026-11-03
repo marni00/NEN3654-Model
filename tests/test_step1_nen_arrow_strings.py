@@ -4,6 +4,7 @@ import pytest
 from model.part2.step1_NEN import (
     _arrow_strings_to_objects,
     _normalise_text_series,
+    _pipeline_aboveground_within_5m,
 )
 
 
@@ -72,3 +73,31 @@ def test_normalise_pyarrow_text_series_without_astype_conversion():
 
     assert result.dtype == object
     assert result.tolist() == ["alpha", pd.NA, "beta"]
+
+
+@pytest.mark.parametrize(
+    ("vertical_position", "min_distance", "expected"),
+    [
+        ("aboveground", 4.99, True),
+        (" ABOVEGROUND ", "4.5", True),
+        ("aboveground", 5, False),
+        ("underground", 1, False),
+        (pd.NA, 1, False),
+        ("aboveground", "invalid", False),
+    ],
+)
+def test_pipeline_aboveground_within_5m(
+    vertical_position,
+    min_distance,
+    expected,
+):
+    frame = pd.DataFrame(
+        {
+            "verticalePositie": [vertical_position],
+            "min_distance": [min_distance],
+        }
+    )
+
+    result = _pipeline_aboveground_within_5m(frame)
+
+    assert result.tolist() == [expected]

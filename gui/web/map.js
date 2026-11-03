@@ -25,10 +25,10 @@ import * as maplibregl from "https://unpkg.com/maplibre-gl@6.12.0/dist/maplibre-
   }
 
   window.addEventListener("error", event => {
-    reportError(event.error || event.message || "Onbekende JavaScript-fout");
+    reportError(event.error || event.message || "Unknown JavaScript error");
   });
   window.addEventListener("unhandledrejection", event => {
-    reportError(event.reason || "Onbehandelde JavaScript-belofte");
+    reportError(event.reason || "Unhandled JavaScript promise");
   });
 
   const token = (dataset, layer) => {
@@ -352,7 +352,7 @@ import * as maplibregl from "https://unpkg.com/maplibre-gl@6.12.0/dist/maplibre-
         }
         const [minX, minY, maxX, maxY] = bounds;
         if (![minX, minY, maxX, maxY].every(Number.isFinite)) {
-          throw new Error("Ongeldige kaartgrenzen ontvangen.");
+          throw new Error("Invalid map bounds received.");
         }
         if (minX === maxX && minY === maxY) {
           map.easeTo({
@@ -397,7 +397,7 @@ import * as maplibregl from "https://unpkg.com/maplibre-gl@6.12.0/dist/maplibre-
 
   function createMap() {
     if (!maplibregl || !maplibregl.Map) {
-      throw new Error("MapLibre kon niet worden geladen.");
+      throw new Error("MapLibre could not be loaded.");
     }
     map = new maplibregl.Map({
       container: "map",
@@ -479,8 +479,8 @@ import * as maplibregl from "https://unpkg.com/maplibre-gl@6.12.0/dist/maplibre-
       }
       showMessage(
         candidates.length > 1
-          ? `Overlappende resultaten: 1 van ${candidates.length}. ` +
-            "Gebruik Vorige en Volgende in het featurepaneel."
+          ? `Overlapping results: 1 of ${candidates.length}. ` +
+            "Use Previous and Next in the feature panel."
           : ""
       );
     });
@@ -498,12 +498,12 @@ import * as maplibregl from "https://unpkg.com/maplibre-gl@6.12.0/dist/maplibre-
       if (sourceMetadata.has(sourceId)) {
         const metadata = sourceMetadata.get(sourceId);
         reportError(
-          `Laag ${metadata.dataset} / ${metadata.layer} kon niet worden verwerkt: ` +
-          `${event.error ? event.error.message : "onbekende bronfout"}`
+          `Layer ${metadata.dataset} / ${metadata.layer} could not be processed: ` +
+          `${event.error ? event.error.message : "unknown source error"}`
         );
       } else if (!sourceId) {
         reportError(
-          event.error ? event.error.message : "Onbekende MapLibre-fout"
+          event.error ? event.error.message : "Unknown MapLibre error"
         );
       }
     });
@@ -525,13 +525,13 @@ import * as maplibregl from "https://unpkg.com/maplibre-gl@6.12.0/dist/maplibre-
         typeof qt === "undefined" ||
         !qt.webChannelTransport
       ) {
-        reject(new Error("QWebChannel is niet beschikbaar."));
+        reject(new Error("QWebChannel is not available."));
         return;
       }
       new QWebChannel(qt.webChannelTransport, channel => {
         bridge = channel.objects.bridge;
         if (!bridge) {
-          reject(new Error("De Python-kaartbridge ontbreekt."));
+          reject(new Error("The Python-mapbridge is missing."));
           return;
         }
         resolve();
@@ -540,7 +540,7 @@ import * as maplibregl from "https://unpkg.com/maplibre-gl@6.12.0/dist/maplibre-
   }
 
   async function bootstrap() {
-    showMessage("Kaart initialiseren…");
+    showMessage("Initializing map…");
     await connectBridge();
     createMap();
   }

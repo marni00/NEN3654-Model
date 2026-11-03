@@ -1,3 +1,18 @@
+"""
+assign_electricity_cable_codes
+
+Assigns the user selected cable-group Codes to electricity features by persistent-ID, for resuming Step 2.       
+Codes are explicit user group labels; the code does not infer that equal Codes represent one physical cable, nor does it infer groups from geometry. 
+Assignment is by persistent id, not feature_id or native FID.
+
+Input:
+    Reads config.toml and KLIC_temp9.gpkg
+
+Output:
+    Writes KLIC_temp19_codes.gpkg
+
+"""
+
 from __future__ import annotations
 
 import logging

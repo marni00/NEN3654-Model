@@ -1,5 +1,8 @@
-"""Read and write normalized non-spatial tables in pipeline GeoPackages."""
+"""
+relational_tables
 
+Writes Pandas DataFrames with to_sql(replace), reads complete tables with read_sql_query, and checks table existence through sqlite_master.
+"""
 from pathlib import Path
 import sqlite3
 

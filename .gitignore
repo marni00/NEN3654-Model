@@ -35,3 +35,9 @@ data/Proposed_Highvoltage/
 .idea/
 .DS_Store
 Thumbs.db
+
+#Explanations
+ARCHITECTURE_PYSIDE6.md
+BACKEND_ANALYSIS.md
+GUI_README.md
+model_documentatie.txt

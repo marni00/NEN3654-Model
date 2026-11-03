@@ -1,3 +1,12 @@
+"""
+gdb_combiner
+
+Independent utility that combines multiple FileGDBs layer by layer. It harmonizes column dtypes/schema, promotes compatible geometry to multipart types, preserves usable gml_id information and removes only records whose normalized geometry and all harmonized attributes are equal.
+
+Input:
+    Not part of Part 1/2. On error or cancellation it removes partial output.
+"""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -44,6 +53,29 @@ def _merged_dtype(dtypes) -> str:
     return "string"
 
 
+def _geometry_type_details(geometry_type) -> tuple[str | None, bool]:
+    """Return the basic geometry family and whether the declared type is multipart."""
+    if geometry_type is None:
+        return None, False
+
+    normalized = str(geometry_type).strip().casefold()
+    if normalized.startswith("3d "):
+        normalized = normalized[3:]
+    if normalized.endswith(" z"):
+        normalized = normalized[:-2]
+    normalized = normalized.replace(" ", "")
+
+    geometry_types = {
+        "point": ("point", False),
+        "multipoint": ("point", True),
+        "linestring": ("line", False),
+        "multilinestring": ("line", True),
+        "polygon": ("polygon", False),
+        "multipolygon": ("polygon", True),
+    }
+    return geometry_types.get(normalized, (None, False))
+
+
 def _cast_column(series, target_type: str):
     if target_type == "integer":
         return pd.to_numeric(series, errors="coerce").astype("Int64")
@@ -78,19 +110,38 @@ def _feature_keys(gdf):
 def _combined_schema(layer: str, sources: list[Path]):
     field_order: list[str] = []
     field_dtypes: dict[str, list] = {}
+    geometry_families: set[str] = set()
+    source_requires_multi = False
     target_crs = None
+
     for source in sources:
         info = pyogrio.read_info(source, layer=layer)
         if target_crs is None:
             target_crs = info["crs"]
+
+        geometry_family, is_multipart = _geometry_type_details(
+            info.get("geometry_type")
+        )
+        if geometry_family is not None:
+            geometry_families.add(geometry_family)
+        source_requires_multi = source_requires_multi or is_multipart
+
         for field, dtype in zip(info["fields"], info["dtypes"]):
             if field not in field_order:
                 field_order.append(field)
             field_dtypes.setdefault(field, []).append(dtype)
+
+    if len(geometry_families) > 1:
+        families = ", ".join(sorted(geometry_families))
+        raise ValueError(
+            f"Layer {layer!r} contains incompatible geometry families: {families}."
+        )
+
     return (
         field_order,
         {field: _merged_dtype(values) for field, values in field_dtypes.items()},
         target_crs,
+        source_requires_multi,
     )
 
 
@@ -99,7 +150,7 @@ def _prepare(gdf, field_order, field_types, target_crs):
     if target_crs:
         if gdf.crs is None:
             raise ValueError(
-                "Een bronlaag heeft geen CRS terwijl de referentielaag dat wel heeft."
+                "A source layer has no CRS while the reference layer has one."
             )
         if gdf.crs != target_crs:
             gdf = gdf.to_crs(target_crs)
@@ -137,9 +188,9 @@ def _geometry_parts(geometry, *, layer: str, gml_id: str | None):
     if geometry_type == "MultiPolygon":
         return "polygon", list(geometry.geoms)
 
-    id_text = f" voor gml_id {gml_id!r}" if gml_id is not None else ""
+    id_text = f" for gml_id {gml_id!r}" if gml_id is not None else ""
     raise ValueError(
-        f"Laag {layer!r} bevat een niet-ondersteund geometrie-type "
+        f"Layer {layer!r} contains an unsupported geometry type "
         f"{geometry_type!r}{id_text}."
     )
 
@@ -163,8 +214,8 @@ def _multipart_geometry(geometries, *, layer: str, gml_id: str):
             family = geometry_family
         elif geometry_family != family:
             raise ValueError(
-                f"Laag {layer!r} bevat verschillende geometrie-families "
-                f"voor gml_id {gml_id!r}."
+                f"Layer {layer!r} contains incompatible geometry families "
+                f"for gml_id {gml_id!r}."
             )
 
         for part in geometry_parts:
@@ -181,7 +232,7 @@ def _multipart_geometry(geometries, *, layer: str, gml_id: str):
         return MultiLineString(parts)
     if family == "polygon":
         return MultiPolygon(parts)
-    raise AssertionError("Onbekende geometrie-familie.")
+    raise AssertionError("Unknown geometry family.")
 
 
 def _promote_geometry_to_multi(geometry, *, layer: str):
@@ -195,7 +246,7 @@ def _promote_geometry_to_multi(geometry, *, layer: str):
         return MultiLineString(parts)
     if family == "polygon":
         return MultiPolygon(parts)
-    raise AssertionError("Onbekende geometrie-familie.")
+    raise AssertionError("Unknown geometry family.")
 
 
 def _prepared_chunks(
@@ -245,19 +296,19 @@ def combine_file_geodatabases(
     sources = [Path(path).resolve() for path in input_gdbs]
     output = Path(output_gdb).resolve()
     if len(sources) < 2:
-        raise ValueError("Selecteer minimaal twee File Geodatabases.")
+        raise ValueError("Select at least two File Geodatabases.")
     if len(set(sources)) != len(sources):
-        raise ValueError("Dezelfde File Geodatabase is meer dan één keer geselecteerd.")
+        raise ValueError("The same File Geodatabase is selected more than once.")
     for source in sources:
         if source.suffix.casefold() != ".gdb" or not source.is_dir():
-            raise ValueError(f"Geen geldige File Geodatabase: {source}")
+            raise ValueError(f"Invalid File Geodatabase: {source}")
     if output.suffix.casefold() != ".gdb":
-        raise ValueError("De uitvoerlocatie moet eindigen op .gdb.")
+        raise ValueError("The output location must end with .gdb.")
     if output in sources:
-        raise ValueError("De uitvoer-FileGDB mag niet ook een invoerbron zijn.")
+        raise ValueError("The output FileGDB cannot also be an input source.")
     if output.exists():
         if not overwrite:
-            raise FileExistsError(f"Uitvoer bestaat al: {output}")
+            raise FileExistsError(f"Output already exists: {output}")
         shutil.rmtree(output)
     output.parent.mkdir(parents=True, exist_ok=True)
 
@@ -282,12 +333,15 @@ def combine_file_geodatabases(
                 progress(
                     layer_index - 1,
                     total_layers,
-                    f"FileGDB-laag combineren: {layer}",
+                    f"Combine FileGDB-layer : {layer}",
                 )
 
-            field_order, field_types, target_crs = _combined_schema(
-                layer, layer_inputs
-            )
+            (
+                field_order,
+                field_types,
+                target_crs,
+                source_requires_multi,
+            ) = _combined_schema(layer, layer_inputs)
             has_gml_id = "gml_id" in field_order
             duplicate_gml_ids: set[str] = set()
 
@@ -315,7 +369,9 @@ def combine_file_geodatabases(
             seen_keys = set()
             grouped_features: dict[str, dict] = {}
             first_write = True
-            promote_layer_to_multi = bool(duplicate_gml_ids)
+            promote_layer_to_multi = (
+                source_requires_multi or bool(duplicate_gml_ids)
+            )
 
             for chunk in _prepared_chunks(
                 layer=layer,

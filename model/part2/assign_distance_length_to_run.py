@@ -1,6 +1,18 @@
-# Script 17
-"""Store A/L values in normalized relationships without duplicating geometry."""
+"""
+assign_distance_length_to_run
 
+Stores a/l results and run memberships in normalized GeoPackage tables without duplicating physical geometry.
+Copies each available reference geometry layer and the single influenced geometry layer once, removing stale a, l and influenced_run_id columns from those physical layers. 
+It reads both *_with_la.csv files into a run_relationships table and reads influenced_runid_links_no_short_runlength.csv into run_memberships. 
+Mast is copied from the supporting KLIC_temp11.gpkg when available.
+
+Input:
+Reads KLIC_temp14.gpkg, both a/l CSVs and KLIC_temp11.gpkg. 
+
+Output:
+    Writes KLIC_temp17.gpkg with physical layers plus run_relationships and run_memberships non-spatial tables.
+
+"""
 from pathlib import Path
 
 import geopandas as gpd

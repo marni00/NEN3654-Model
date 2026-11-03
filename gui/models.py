@@ -1,3 +1,11 @@
+"""
+models
+
+Defines enums and dataclasses for task state, workflow stage, feature keys, map features, loaded datasets, proposed-HV/ArcGIS configuration and the observable application state.
+
+Input:
+    In-memory GUI state contract.
+"""
 from __future__ import annotations
 
 from dataclasses import dataclass, field

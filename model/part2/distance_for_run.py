@@ -1,6 +1,18 @@
-# Script 15
-"""Create numeric reference sections between consecutive observations."""
+"""
+distance_for_run
 
+Constructs numeric sections along each reference part between consecutive target-endpoint observations.
+Joins endpoint observations to surviving run memberships. 
+Within reference_feature_id, reference_part_no, run_id and influenced_run_id, observations are sorted by projected reference measure. 
+Measures are rounded to 6 decimals for duplicate removal, retaining the shortest distance at a duplicate measure. 
+Consecutive observations form a section when the second measure is greater and the pair is not the same target part with the same endpoint role. 
+Each output row stores section length, endpoint distances and the target segment identities.
+
+Input:
+    eads KLIC_temp14.gpkg, KLIC_temp12.gpkg and influenced_runid_links_no_short_runlength.csv.
+Output:
+    Writes proposed_hv_segments_between_distance_lines.csv and electriciteitskabel_segments_between_distance_lines.csv beside KLIC_temp15.gpkg; the nominal GeoPackage path itself is used mainly to select the directory.
+"""
 from pathlib import Path
 
 import geopandas as gpd

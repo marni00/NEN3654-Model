@@ -1,4 +1,20 @@
-#Script 16
+"""
+calculate_normative_distance_length
+
+Calculate run-leven (hv-system - pipeline relation) a and l values from the previous segments
+For each section, mid_distance is the arithmetic mean of dist_from and dist_to. weighted_mid is seg_length multiplied by mid_distance. 
+For each (run_id, influenced_run_id), l is the sum of seg_length and a is sum(weighted_mid) divided by l. 
+The first reference dataset/feature identifier and the number of distinct reference parts are retained.
+
+Only rows with valid run identifiers, influenced_run_id, section length and endpoint distances are used. a remains null when l is zero.
+
+Input:
+    Reads the two *_segments_between_distance_lines.csv files 
+
+Output:
+    Writes corresponding *_with_la.csv files.
+
+"""
 # ============================================================
 # IMPORT DEPENDENCIES
 # ============================================================

@@ -1,3 +1,12 @@
+"""
+upload_dialog
+
+Collects portal URL, username and masked password and returns them to the caller.
+
+Input:
+    Credential-entry UI; it does not persist credentials.
+"""
+
 from __future__ import annotations
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QDialog, QDialogButtonBox, QFormLayout, QLabel, QLineEdit, QVBoxLayout
@@ -5,7 +14,7 @@ from PySide6.QtWidgets import QDialog, QDialogButtonBox, QFormLayout, QLabel, QL
 class UploadDialog(QDialog):
     def __init__(self, portal_url: str, username: str, on_submit, parent=None) -> None:
         super().__init__(parent)
-        self.setWindowTitle("Uploaden naar ArcGIS Online")
+        self.setWindowTitle("Upload to ArcGIS Online")
         self.setModal(True)
         self.on_submit = on_submit
         layout = QVBoxLayout(self)
@@ -18,14 +27,14 @@ class UploadDialog(QDialog):
         portal_hint = QLabel('Sweco: "https://ggc.maps.arcgis.com"')
         portal_hint.setObjectName("muted")
         form.addRow("", portal_hint)
-        form.addRow("Gebruikersnaam", self.username)
-        username_hint = QLabel('"voornaam.achternaal@sweco.nl"')
+        form.addRow("Username", self.username)
+        username_hint = QLabel('"firstname.lastname@sweco.nl"')
         username_hint.setObjectName("muted")
         form.addRow("", username_hint)
-        form.addRow("Wachtwoord", self.password)
+        form.addRow("Password", self.password)
         layout.addLayout(form)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Cancel | QDialogButtonBox.StandardButton.Ok)
-        buttons.button(QDialogButtonBox.StandardButton.Ok).setText("Uploaden")
+        buttons.button(QDialogButtonBox.StandardButton.Ok).setText("Upload")
         buttons.rejected.connect(self.reject)
         buttons.accepted.connect(self._submit)
         layout.addWidget(buttons)

@@ -1,4 +1,18 @@
-#Script 21
+"""
+raw_klic_cleaned
+
+Builds the cleaned KLIC export intended to remain close to the prepared source data.
+Copies layers while preserving native GeoPackage FIDs where possible and combines the cleaned conduit content from KLIC_temp5.gpkg with the final Part 1 electricity/proposed-influencer content and persistent IDs from KLIC_temp9.gpkg. 
+SQL identifier quoting and FID restoration are used to avoid accidental re-numbering in the exported layers.
+
+
+Input:
+    Inputs: KLIC_temp5.gpkg and KLIC_temp9.gpkg. 
+    
+Output:
+    KLIC_raw_cleaned.gpkg.
+"""
+
 import sqlite3
 from pathlib import Path
 

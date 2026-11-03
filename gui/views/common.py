@@ -1,3 +1,12 @@
+"""
+common
+
+Provides reusable cards, titles, muted labels, layouts and a path chooser widget.
+
+Input:
+    Presentation helper.
+"""
+
 from __future__ import annotations
 from pathlib import Path
 from PySide6.QtCore import Qt

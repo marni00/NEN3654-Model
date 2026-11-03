@@ -1,5 +1,22 @@
-#Script 6
+"""
 
+optional_add_proposed_hv
+
+Optionally appends a user-supplied proposed high-voltage dataset as the proposed_highvoltage layer.
+
+Copies the input GeoPackage, removes null/empty proposed geometries, adds werkVoltage, verticalePositie, Code and voltage_class, transforms the proposed data to the CRS of the first GeoPackage layer, retains only those four attributes plus geometry, and appends the layer.
+work_voltage must be an integer from 1,000 through 380,000 V. Values from 1,000 through 35,000 are 'middenspanning'; values above 35,000 through 380,000 are 'hoogspanning'. vertical_position must be underground, aboveground or TEV. Empty geometry or missing CRS is rejected.
+
+Parameters:
+    Voltage comparison is >= 10,000. Diameter comparison is >= 80 mm. A missing werkVoltage or conductive column causes that layer to retain no features.
+
+Input:
+    Reads KLIC_temp5.gpkg with the comficured vector file containing the proposed_hv geometry
+
+Output:
+    Writes KLIC_temp6.gpkg
+
+"""
 from pathlib import Path
 from shutil import copy2
 

@@ -1,3 +1,12 @@
+"""
+map_panel
+
+Embeds MapLibre in QWebEngineView, restricts navigation, bridges JavaScript feature clicks to Python, synchronizes data sources/visibility/highlights and handles overlapping-feature cycling.
+
+Input:
+    Interactive map display only.
+"""
+
 from __future__ import annotations
 
 import hashlib
@@ -27,11 +36,11 @@ from gui.views.common import card, muted_label, section_title
 
 DATASET_LABELS = {
     "part1": "Part 1 · filtering",
-    "part2_filtered": "Part 2 · relevante features",
-    "part2_step1": "Part 2 · resultaten stap 1",
-    "part2_no_pass_step1": "Part 2 · no-pass stap 1",
-    "part2_step2": "Part 2 · resultaten stap 2",
-    "part2_no_pass_step2": "Part 2 · no-pass stap 2",
+    "part2_filtered": "Part 2 · relevant features",
+    "part2_step1": "Part 2 · results step 1",
+    "part2_no_pass_step1": "Part 2 · no-pass step 1",
+    "part2_step2": "Part 2 · results step 2",
+    "part2_no_pass_step2": "Part 2 · no-pass step 2",
 }
 
 
@@ -116,8 +125,8 @@ class MapPanel(QSplitter):
         container = card()
         layout = QVBoxLayout(container)
         header = QHBoxLayout()
-        header.addWidget(section_title("Interactieve kaart"), 1)
-        fit = QPushButton("Zoom naar zichtbare lagen")
+        header.addWidget(section_title("Interactive map"), 1)
+        fit = QPushButton("Zoom to visible layers")
         fit.setProperty("secondary", True)
         fit.clicked.connect(self.fit_visible)
         header.addWidget(fit)
@@ -162,17 +171,17 @@ class MapPanel(QSplitter):
     def _build_layers(self) -> None:
         box = card()
         layout = QVBoxLayout(box)
-        layout.addWidget(section_title("Kaartlagen"))
+        layout.addWidget(section_title("Map layers"))
         layout.addWidget(
             muted_label(
-                "Part 2-lagen worden pas gelezen wanneer ze worden aangevinkt."
+                "Part 2 layers are only read when they are checked."
             )
         )
         self.tree = QTreeWidget()
-        self.tree.setHeaderLabels(["Dataset / laag"])
+        self.tree.setHeaderLabels(["Dataset / layer"])
         self.tree.itemChanged.connect(self._visibility_changed)
         layout.addWidget(self.tree, 1)
-        layout.addWidget(section_title("Symbologie"))
+        layout.addWidget(section_title("Symbology"))
         self.legend = QVBoxLayout()
         layout.addLayout(self.legend)
         layout.addStretch()
@@ -208,13 +217,13 @@ class MapPanel(QSplitter):
     def _page_loaded(self, success: bool) -> None:
         if not success:
             self._show_map_error(
-                "De lokale kaartpagina kon niet worden geladen."
+                "Local map page could not be loaded."
             )
 
     def _render_process_terminated(self, status, exit_code: int) -> None:
         self._ready = False
         self._show_map_error(
-            f"Het kaartproces is gestopt (status {status}, code {exit_code})."
+            f"Map process terminated (status {status}, code {exit_code})."
         )
 
     def _map_ready(self) -> None:
@@ -236,7 +245,7 @@ class MapPanel(QSplitter):
             "(() => {"
             "try {"
             f"if (!window.nenMap || typeof window.nenMap.{function} !== 'function') "
-            f"throw new Error('Kaartfunctie niet beschikbaar: {function}');"
+            f"throw new Error('Map function not available: {function}');"
             f"window.nenMap.{function}({encoded});"
             "return {ok:true};"
             "} catch (error) {"
@@ -248,8 +257,8 @@ class MapPanel(QSplitter):
         def completed(result) -> None:
             if isinstance(result, dict) and not result.get("ok", False):
                 self._show_map_error(
-                    f"Kaartopdracht {function} is mislukt: "
-                    f"{result.get('error', 'onbekende fout')}"
+                    f"Map task {function} failed: "
+                    f"{result.get('error', 'unknown error')}"
                 )
 
         self.web.page().runJavaScript(script, completed)
@@ -338,7 +347,7 @@ class MapPanel(QSplitter):
         try:
             raw = json.loads(payload)
             if not isinstance(raw, list):
-                raise ValueError("verwacht een lijst")
+                raise ValueError("expected in list")
             keys = []
             for item in raw:
                 if not isinstance(item, dict):
@@ -352,7 +361,7 @@ class MapPanel(QSplitter):
                     keys.append(key)
         except (KeyError, TypeError, ValueError, json.JSONDecodeError) as error:
             self._show_map_error(
-                f"Overlappende kaartselectie kon niet worden verwerkt: {error}"
+                f"Overlapping map selection could not be processed: {error}"
             )
             return
         self.controller.select_overlapping_features(keys)

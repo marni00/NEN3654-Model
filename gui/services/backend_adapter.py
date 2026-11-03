@@ -1,3 +1,12 @@
+"""
+backend_adapter
+
+Launches gui.model_worker with the current interpreter, exchanges request/progress/result JSON, polls every 0.10 s, terminates on cancellation and cleans control files. Upload remains an in-process call.
+
+Input:
+    Process-isolation bridge between GUI and runners.
+"""
+
 from __future__ import annotations
 
 import json

@@ -1,6 +1,18 @@
-# Script 12
-"""Calculate numeric endpoint-to-influencer distance observations."""
+"""
+calculate_parallel_distance
 
+Calculates numeric distance observations for every accepted target/reference segment pair.
+Uses parallel_pairs_all.csv to look up the matched geometries and the Endpoints layer. 
+With ENDPOINT_SIDE='target', each start/end point of the target conduit segment is projected to the nearest point on the matched reference segment. 
+It stores the Euclidean distance and the measure of that projected point along the reference geometry, together with both segment identities and pair-quality metadata. 
+Zero-distance observations are retained.
+
+Input:
+    Reads KLIC_temp11.gpkg and its parallel-pair CSV.
+
+Output:
+    Writes the non-spatial endpoint_distance_observations table in KLIC_temp12.gpkg.
+"""
 import math
 from pathlib import Path
 

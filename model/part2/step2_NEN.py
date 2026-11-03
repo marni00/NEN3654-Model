@@ -1,5 +1,18 @@
-# Script 20
+"""
+step2_NEN
 
+Executes NEN 3654 Step 2 UC calculations for the Step 1 inductive no-pass population.
+Loads semicolon-separated utils/Step2_Table.csv, normalizes Code to uppercase, converts six K columns, and joins them to Step 1 no-pass proposed-HV and electricity rows. 
+For continuous, corrosion and single-phase cases it calculates UC = (l/1000) * K1 * (log10(K2) - log10(a)). UC <= 1 is 'Pass'; UC > 1 is 'No pass'. 
+step2_inductive becomes pass only when all three UC statuses pass, no-pass when any is no-pass, and remains missing when inputs are incomplete. 
+Status is summarized by influenced_run_id and joined to the corresponding influenced Step 1 inductive no-pass rows. For normalized input, physical layers are copied and only the narrow assessment tables are updated.
+
+
+Input:
+    Reads KLIC_temp19_codes.gpkg and utils/Step2_Table.csv.
+Output:
+    Writes KLIC_temp20.gpkg.
+"""
 from pathlib import Path
 
 import geopandas as gpd

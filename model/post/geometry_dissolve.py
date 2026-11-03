@@ -1,5 +1,11 @@
-"""GeoDataFrame dissolve helpers with a bounded-memory line fallback."""
+"""
+geometry_dissolve
 
+Provides robust geometry dissolve utilities for post-processing.
+Determines grouping columns, collects line parts, normalizes dissolved line geometry and first attempts the standard GeoPandas dissolve path. 
+If that operation raises a memory-related failure, it performs grouped geometry collection/union in a bounded-memory fallback and reconstructs a GeoDataFrame.
+
+"""
 from __future__ import annotations
 
 import warnings

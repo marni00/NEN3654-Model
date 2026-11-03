@@ -1,3 +1,11 @@
+"""
+model_worker
+
+Runs Part 1/Part 2 in a separate Python process, writes atomic JSON progress/result files, restores normal Windows compute QoS, and invokes post-processing after model phases.
+
+Input:
+    Worker modes are part1, part2, part2_step1 and part2_step2. Errors are returned as tracebacks in result.json.
+"""
 from __future__ import annotations
 
 import time
@@ -279,7 +287,7 @@ def run(request_path: Path, state_path: Path, result_path: Path) -> int:
         if not isinstance(arguments, dict):
             raise ValueError("Worker request is missing its arguments object.")
 
-        print(f"[GUI worker] {mode} gestart.", flush=True)
+        print(f"[GUI worker] {mode} started.", flush=True)
         if mode == "part1":
             payload = _run_part1(arguments, state_path)
         elif mode == "part2":
@@ -292,7 +300,7 @@ def run(request_path: Path, state_path: Path, result_path: Path) -> int:
             raise ValueError(f"Unsupported worker mode: {mode!r}")
 
         elapsed = time.perf_counter() - started
-        print(f"[GUI worker] {mode} gereed in {elapsed:.1f} s.", flush=True)
+        print(f"[GUI worker] {mode} completed in {elapsed:.1f} s.", flush=True)
         _write_json_atomic(
             result_path,
             {"ok": True, "payload": payload, "elapsed_seconds": elapsed},
@@ -300,7 +308,7 @@ def run(request_path: Path, state_path: Path, result_path: Path) -> int:
         return 0
     except Exception:
         print(
-            f"[GUI worker] uitvoering mislukt na {time.perf_counter() - started:.1f} s.",
+            f"[GUI worker] execution failed after {time.perf_counter() - started:.1f} s.",
             flush=True,
         )
         _write_json_atomic(

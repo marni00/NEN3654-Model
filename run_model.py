@@ -1,3 +1,12 @@
+"""
+run_model
+
+Orchestrates Part 2. The workflow is split into NEN 3654 Step 1 and Step 2 so that the GUI can run Step 1 first, let the user assign cable Codes to the remaining candidates, and then resume with Step 2.
+
+Input:
+    Inputs: KLIC_temp9.gpkg, selection.toml and config.toml. Outputs include KLIC_temp9_codes.gpkg, KLIC_temp9_selected.gpkg, KLIC_temp10.gpkg through KLIC_temp20.gpkg, several CSV relationship exports, and normalized non-spatial tables inside later GeoPackages.
+"""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -64,7 +73,7 @@ def run_model_step1_pipeline(
     # This established preprocessing step is retained. In the split GUI
     # workflow the config contains no cable groups yet, so it creates an empty
     # Code column without requiring the user to classify cables in advance.
-    begin(1, "9B", "Codekolom voor elektriciteitskabels voorbereiden")
+    begin(1, "9B", "Prepare Code-column for electricity features")
     cable_codes_output = temp_dir / "KLIC_temp9_codes.gpkg"
     assign_electricity_cable_codes(
         input_path=filtering_output,
@@ -74,7 +83,7 @@ def run_model_step1_pipeline(
         id_column="id",
     )
 
-    begin(2, "9C", "Geselecteerde leidingen en beïnvloeders verwerken")
+    begin(2, "9C", "Filter selected features and influencers")
     selected_output = temp_dir / "KLIC_temp9_selected.gpkg"
     filter_influencers_from_selected_features(
         input_path=cable_codes_output,
@@ -82,19 +91,19 @@ def run_model_step1_pipeline(
         config_path=Path(selection_config),
     )
 
-    begin(3, 10, "Features segmenteren")
+    begin(3, 10, "Segment features")
     step_10_output = temp_dir / "KLIC_temp10.gpkg"
     segment_features(input_path=selected_output, output_path=step_10_output)
 
-    begin(4, 11, "Parallelle features zoeken")
+    begin(4, 11, "Find parallel features")
     step_11_output = temp_dir / "KLIC_temp11.gpkg"
     find_parallel_features(input_path=step_10_output, output_path=step_11_output)
 
-    begin(5, 12, "Parallelle afstand berekenen")
+    begin(5, 12, "Calculate parallel distance")
     step_12_output = temp_dir / "KLIC_temp12.gpkg"
     calculate_parallel_distance(input_path=step_11_output, output_path=step_12_output)
 
-    begin(6, 13, "Opeenvolgende parallelle features bepalen")
+    begin(6, 13, "Determine consecutive parallel features")
     step_13_output = temp_dir / "KLIC_temp13.gpkg"
     consecutive_parallel_features(
         input_path=step_12_output,
@@ -102,11 +111,11 @@ def run_model_step1_pipeline(
         geometry_path=step_11_output,
     )
 
-    begin(7, 14, "Features op runlengte filteren")
+    begin(7, 14, "Filter features by run length")
     step_14_output = temp_dir / "KLIC_temp14.gpkg"
     filter_features_run_length(input_path=step_13_output, output_path=step_14_output)
 
-    begin(8, 15, "Afstand per run bepalen")
+    begin(8, 15, "Distance per run determine")
     step_15_output = temp_dir / "KLIC_temp15.gpkg"
     create_run_exports(
         input_path=step_14_output,
@@ -114,11 +123,11 @@ def run_model_step1_pipeline(
         output_path=step_15_output,
     )
 
-    begin(9, 16, "Normatieve afstand en lengte berekenen")
+    begin(9, 16, "Calculate normative distance and length")
     step_16_output = temp_dir / "KLIC_temp16.gpkg"
     calculate_normative_distance_length(input_path=step_14_output, output_path=step_16_output)
 
-    begin(10, 17, "Afstand en lengte aan runs toewijzen")
+    begin(10, 17, "Assign distance and length to runs")
     step_17_output = temp_dir / "KLIC_temp17.gpkg"
     assign_distance_length_to_run(
         source_data_path=step_14_output,
@@ -128,7 +137,7 @@ def run_model_step1_pipeline(
         support_data_path=step_11_output,
     )
 
-    begin(11, 18, "Correcte afstand aan unieke runs toewijzen")
+    begin(11, 18, "Assign correct distance to unique runs")
     step_18_output = temp_dir / "KLIC_temp18.gpkg"
     assign_correct_distance_to_unique_run(
         source_data_path=step_17_output,
@@ -136,7 +145,7 @@ def run_model_step1_pipeline(
         output_data_path=step_18_output,
     )
 
-    begin(12, 19, "NEN 3654 stap 1 uitvoeren")
+    begin(12, 19, "Execute NEN 3654 step 1")
     step_19_output = temp_dir / "KLIC_temp19.gpkg"
     step1_nen(input_path=step_18_output, output_path=step_19_output)
 
@@ -149,7 +158,7 @@ def run_model_step1_pipeline(
         output_path=step_19_output,
     )
     if progress:
-        progress(total, total, "NEN 3654 stap 1 gereed")
+        progress(total, total, "NEN 3654 step 1 completed")
     return step_19_output
 
 
@@ -182,7 +191,7 @@ def run_model_step2_pipeline(
         if progress:
             progress(index - 1, total, description)
 
-    begin(1, "19B", "Codes aan resterende elektriciteitskabels toewijzen")
+    begin(1, "19B", "Assign codes to remaining electricity cables")
     coded_step1_output = temp_dir / "KLIC_temp19_codes.gpkg"
     assign_electricity_cable_codes_to_step1(
         input_path=step_19_output,
@@ -191,7 +200,7 @@ def run_model_step2_pipeline(
         id_column="id",
     )
 
-    begin(2, 20, "NEN 3654 stap 2 uitvoeren")
+    begin(2, 20, "Execute NEN 3654 step 2")
     model_output = temp_dir / "KLIC_temp20.gpkg"
     step2_nen(input_path=coded_step1_output, output_path=model_output)
 
@@ -200,7 +209,7 @@ def run_model_step2_pipeline(
         output_path=model_output,
     )
     if progress:
-        progress(total, total, "NEN 3654 stap 2 gereed")
+        progress(total, total, "NEN 3654 step 2 completed")
     return model_output
 
 

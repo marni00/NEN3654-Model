@@ -1,3 +1,11 @@
+"""
+app
+
+Builds the main window, controller, panels, map server and refresh callbacks; handles DPI awareness, window sizing, errors and orderly shutdown.
+
+Input:
+    Top-level GUI composition only.
+"""
 from __future__ import annotations
 import ctypes
 import os
@@ -57,9 +65,9 @@ class NEN3654App(QMainWindow):
         header = QFrame()
         header.setObjectName("card")
         header_layout = QVBoxLayout(header)
-        title = QLabel("NEN 3654 Analyse")
+        title = QLabel("NEN 3654 Analysis")
         title.setStyleSheet("font-size: 18pt; font-weight: 600;")
-        subtitle = QLabel("KLIC-preparatie, featureselectie, analyse en publicatie in één workflow")
+        subtitle = QLabel("KLIC-preparation, feature selection, analysis and publication in one workflow")
         subtitle.setObjectName("muted")
         subtitle.setWordWrap(True)
         header_layout.addWidget(title)
@@ -84,7 +92,7 @@ class NEN3654App(QMainWindow):
         footer.setStyleSheet(f"background:{COLORS['gray_700']}; color:white;")
         footer_layout = QHBoxLayout(footer)
         footer_layout.setContentsMargins(SPACING["lg"], SPACING["sm"], SPACING["lg"], SPACING["sm"])
-        footer_layout.addWidget(QLabel("Sweco · NEN 3654 desktoptool"))
+        footer_layout.addWidget(QLabel("Sweco · NEN 3654 Desktop Analysis Tool"))
         outer.addWidget(footer)
         self.setCentralWidget(central)
 
@@ -119,16 +127,16 @@ class NEN3654App(QMainWindow):
     def closeEvent(self, event: QCloseEvent) -> None:
         if self.state_model.busy:
             answer = QMessageBox.question(
-                self, "Proces actief",
-                "Er is een backendproces actief. Sluiten kan een onvolledige werkmap achterlaten. Toch sluiten?"
+                self, "Process Active",
+                "There is a backend process active. Closing can leave an incomplete workspace. Still close?"
             )
             if answer != QMessageBox.StandardButton.Yes:
                 event.ignore()
                 return
         elif self.state_model.dirty:
             answer = QMessageBox.question(
-                self, "Niet-uitgevoerde wijzigingen",
-                "Selecties of configuratie zijn gewijzigd maar nog niet verwerkt. Toch sluiten?"
+                self, "Unsaved Changes",
+                "Selections or configuration have been modified but not yet processed. Still close?"
             )
             if answer != QMessageBox.StandardButton.Yes:
                 event.ignore()

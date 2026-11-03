@@ -1,7 +1,20 @@
-#Script 2
+"""
 
-#pipeline/hormonize_units_materials.py
+harmonize_units_materials.py
 
+Standardize pipe diameters and derive constance material and electrical-conductivity attributes for every layer
+
+buisDiameters is standardized to milimeters using the units of buisDiameterM. 
+Invallids are then <null>. material property is build for buismateriaalType and/or telecomKabelMateriaalType or if necessary: label, lable or toelicting. 
+Known material types are mapped to material_norm, conductive is 'yes' for conductive materials and no for non-conductive materials
+
+Input:
+    Reads KLIC.gpkg 
+
+Output:
+    Writes KLIC_temp2.gpkg, accompanying KLIC_temp2_material_report.csv for diagnostics
+
+"""
 from pathlib import Path
 import re
 

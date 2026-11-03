@@ -1,3 +1,12 @@
+"""
+theme
+
+Applies the application's Qt stylesheet and palette.
+
+Input:
+    Presentation only.
+"""
+
 from __future__ import annotations
 
 from PySide6.QtGui import QColor, QFont, QPalette

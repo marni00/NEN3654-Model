@@ -1,5 +1,21 @@
-#Script 8
+"""
 
+filter_relevant_features_NEN
+
+This script applies the first spatial NEN3654 screening for electrical influencer features
+
+Electrical features are classifies by aboveground, underground above 24kv and underground below 24kv. Buffers for each influencer class are desolved and influencer layers are labelled with an associated influence type and may be removed if it is under no influence.
+
+Parameters:
+    Underground >24 kV: voltage > 24,000 V, 850 m buffer, length >= 20 m. Underground <=24 kV: voltage <= 24,000 V, 550 m buffer, length >= 350 m. Aboveground: 1,610 m buffer, length >= 10 m.
+
+Input:
+    Reads KLIC_temp7.gpkg
+
+Output:
+    Writes KLIC_temp8.gpkg with new attatched attributes
+
+"""
 from pathlib import Path
 import warnings
 import sqlite3

@@ -1,16 +1,22 @@
+"""
+map_server
+
+Runs a tokenized loopback HTTP server on 127.0.0.1, serves only map assets and registered temporary GeoJSON files, and supports cleanup/shutdown.
+
+Input:
+    Local display transport, not a GIS model step.
+"""
+
 from __future__ import annotations
 
 import hashlib
-import os
 import secrets
+import os
 import tempfile
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
-
-from PySide6.QtCore import QFile, QIODevice
-from PySide6.QtWebChannel import QWebChannel
 
 
 class LocalMapServer:
@@ -29,7 +35,6 @@ class LocalMapServer:
 
     def __init__(self, web_root: Path) -> None:
         self._web_root = web_root.resolve(strict=True)
-        self._qwebchannel_js = self._load_qwebchannel_js()
         self._token = secrets.token_urlsafe(24)
         self._payload_dir = tempfile.TemporaryDirectory(
             prefix="nen3654_map_"
@@ -97,22 +102,6 @@ class LocalMapServer:
         self.clear_geojson()
         self._payload_dir.cleanup()
 
-    @staticmethod
-    def _load_qwebchannel_js() -> bytes:
-        # Importing QWebChannel loads the module that owns this Qt resource.
-        _ = QWebChannel
-
-        resource = QFile(":/qtwebchannel/qwebchannel.js")
-        if not resource.open(QIODevice.OpenModeFlag.ReadOnly):
-            raise RuntimeError(
-                "Could not load Qt resource :/qtwebchannel/qwebchannel.js"
-            )
-
-        try:
-            return bytes(resource.readAll())
-        finally:
-            resource.close()
-
     def _handler_type(self):
         owner = self
 
@@ -143,18 +132,6 @@ class LocalMapServer:
             return
 
         relative = request_path[len(prefix):]
-
-        if relative == "qwebchannel.js":
-            self._send(
-                handler,
-                200,
-                self._qwebchannel_js,
-                "application/javascript; charset=utf-8",
-                include_body,
-                cache_control="no-cache",
-            )
-            return
-
         if relative in self._STATIC_FILES:
             file_path = (self._web_root / relative).resolve()
             if file_path.parent != self._web_root or not file_path.is_file():

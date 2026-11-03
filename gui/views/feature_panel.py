@@ -1,3 +1,12 @@
+"""
+feature_panel
+
+Shows selected-feature attributes, analysis-selection checkboxes, conduit combine controls and cable-Code groups. User actions are delegated to the controller.
+
+Input:
+    Selection UI; does not directly write GIS files.
+"""
+
 from __future__ import annotations
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
@@ -25,16 +34,16 @@ class FeaturePanel(QSplitter):
     def _detail_widget(self):
         box = card()
         layout = QVBoxLayout(box)
-        self.detail_title = section_title("Geen feature geselecteerd")
+        self.detail_title = section_title("No feature selected")
         layout.addWidget(self.detail_title)
         overlap_row = QHBoxLayout()
         self.overlap_status = QLabel()
-        self.previous_overlap = QPushButton("Vorige")
+        self.previous_overlap = QPushButton("Previous")
         self.previous_overlap.setProperty("secondary", True)
         self.previous_overlap.clicked.connect(
             lambda: self.controller.cycle_overlapping_feature(-1)
         )
-        self.next_overlap = QPushButton("Volgende")
+        self.next_overlap = QPushButton("Next")
         self.next_overlap.setProperty("secondary", True)
         self.next_overlap.clicked.connect(
             lambda: self.controller.cycle_overlapping_feature(1)
@@ -51,14 +60,14 @@ class FeaturePanel(QSplitter):
     def _selection_widget(self):
         box = card()
         layout = QVBoxLayout(box)
-        layout.addWidget(section_title("Selectie voor Part 2"))
+        layout.addWidget(section_title("Selection for Part 2"))
         layout.addWidget(muted_label(
-            "Vink features of een volledige laag aan. De kolom Samenvoegen geldt alleen "
-            "voor de geselecteerde buisleidingen in die laag."
+            "Select features or entire layers. The Merge column only applies "
+            "to the selected pipelines in that layer."
         ))
         self.tree = QTreeWidget()
         self.tree.setColumnCount(4)
-        self.tree.setHeaderLabels(["Laag / feature", "Meenemen", "Samenvoegen", "Code"])
+        self.tree.setHeaderLabels(["Layer / Feature", "Include", "Merge", "Code"])
         self.tree.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         self.tree.header().setStretchLastSection(False)
         self.tree.header().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
@@ -69,7 +78,7 @@ class FeaturePanel(QSplitter):
         layout.addWidget(self.tree, 1)
         row = QHBoxLayout()
         self.summary = QLabel()
-        self.clear_button = QPushButton("Alles deselecteren")
+        self.clear_button = QPushButton("Clear Selection")
         self.clear_button.setProperty("secondary", True)
         self.clear_button.clicked.connect(self.controller.clear_analysis_selection)
         row.addWidget(self.summary, 1)
@@ -80,15 +89,15 @@ class FeaturePanel(QSplitter):
     def _groups_widget(self):
         box = card()
         layout = QVBoxLayout(box)
-        layout.addWidget(section_title("Kabelgroepen"))
-        layout.addWidget(muted_label("Selecteer elektriciteitskabels en wijs één gezamenlijke Code toe."))
+        layout.addWidget(section_title("Cable groups"))
+        layout.addWidget(muted_label("Select cables and assign a shared Code."))
         row = QHBoxLayout()
         row.addWidget(QLabel("Code"))
         self.group_code = QLineEdit()
         row.addWidget(self.group_code, 1)
-        assign = QPushButton("Code toewijzen")
+        assign = QPushButton("Assign Code")
         assign.clicked.connect(self._assign)
-        remove = QPushButton("Uit groep verwijderen")
+        remove = QPushButton("Remove from Group")
         remove.setProperty("secondary", True)
         remove.clicked.connect(self._remove)
         row.addWidget(assign)
@@ -114,9 +123,9 @@ class FeaturePanel(QSplitter):
         self.previous_overlap.setEnabled(show_navigation and not self.state.busy)
         self.next_overlap.setEnabled(show_navigation and not self.state.busy)
         if not feature:
-            self.detail_title.setText("Geen feature geselecteerd")
+            self.detail_title.setText("No feature selected")
             self.overlap_status.clear()
-            self.detail_text.setPlainText("Klik een feature op de kaart of kies een feature in de selectielijst.")
+            self.detail_text.setPlainText("Click a feature on the map or select a feature in the list.")
             return
         if show_navigation:
             try:
@@ -124,27 +133,27 @@ class FeaturePanel(QSplitter):
             except ValueError:
                 position = 1
             self.overlap_status.setText(
-                f"Overlappend resultaat {position} van {len(overlaps)}"
+                f"Overlapping result {position} of {len(overlaps)}"
             )
         else:
             self.overlap_status.clear()
         self.detail_title.setText(feature.key.label)
         rows = [
             ("Dataset", feature.key.dataset),
-            ("Laag/type", feature.key.layer),
+            ("Layer/Type", feature.key.layer),
             (
                 "ID",
                 feature.key.persistent_id
                 if feature.key.persistent_id is not None
-                else "Niet beschikbaar",
+                else "Not available",
             ),
-            ("Geometrie", feature.geometry_type),
+            ("Geometry", feature.geometry_type),
         ]
         if feature.length_m is not None:
-            rows.append(("Lengte", f"{feature.length_m:,.2f} m"))
+            rows.append(("Length", f"{feature.length_m:,.2f} m"))
         code = self.controller.group_for(feature.key)
         if code:
-            rows.append(("Toegewezen Code", code))
+            rows.append(("Assigned Code", code))
         rows.extend(
             sorted(
                 (
@@ -194,7 +203,7 @@ class FeaturePanel(QSplitter):
                 identifier = (
                     str(key.persistent_id)
                     if key.persistent_id is not None
-                    else "niet beschikbaar"
+                    else "not available"
                 )
                 child = QTreeWidgetItem([f"ID {identifier}", "", "", self.controller.group_for(key)])
                 child.setData(0, Qt.ItemDataRole.UserRole, key)
@@ -204,7 +213,7 @@ class FeaturePanel(QSplitter):
         self._updating = False
         conduits = sum(k.layer in CONDUIT_LAYERS for k in self.state.selected_for_analysis)
         influencers = sum(k.layer in INFLUENCER_LAYERS for k in self.state.selected_for_analysis)
-        self.summary.setText(f"{conduits} buisleiding(en), {influencers} beïnvloeder(s)")
+        self.summary.setText(f"{conduits} conduit(s), {influencers} influencer(s)")
         self.clear_button.setEnabled(bool(self.state.selected_for_analysis) and not self.state.busy)
 
     def _refresh_groups(self) -> None:
@@ -219,7 +228,7 @@ class FeaturePanel(QSplitter):
                 f"Code {code}\n{len(ids)} feature(s), IDs: "
                 f"{', '.join(map(str, ids))}"
             )
-        self.groups_text.setPlainText("\n\n".join(lines) if lines else "Nog geen kabelgroepen aangemaakt.")
+        self.groups_text.setPlainText("\n\n".join(lines) if lines else "No cable groups created.")
 
     def _item_changed(self, item, column) -> None:
         if self._updating or self.state.busy or column not in (1, 2):
@@ -247,7 +256,7 @@ class FeaturePanel(QSplitter):
         try:
             self.controller.assign_cable_group(self._selected_keys(), self.group_code.text())
         except ValueError as error:
-            QMessageBox.warning(self, "Kabelgroep", str(error))
+            QMessageBox.warning(self, "Cable Group", str(error))
 
     def _remove(self) -> None:
         self.controller.remove_from_cable_groups(self._selected_keys())

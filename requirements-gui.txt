@@ -1,0 +1,9 @@
+# Supported Python: >=3.12,<3.14
+PySide6>=6.10,<7
+geopandas>=0.14,<2
+pyogrio>=0.7,<1
+shapely>=2,<3
+pandas>=2,<3
+numpy>=1.26,<3
+# Optional; required only for ArcGIS Online upload:
+arcgis>=2.3,<3

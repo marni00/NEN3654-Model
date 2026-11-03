@@ -1,25 +1,22 @@
-#Script 11
-# =============================================================================
-# PARALLEL RUNNING FEATURES DETECTION  (performance-optimized)
-#
-# Behavior-preserving changes vs. the original script:
-#   1. The reference buffer (MAX_DISTANCE around hv/cable geometries) is now
-#      computed ONCE per reference layer, instead of being recomputed inside
-#      run_authoritative_parallel_pairs on every (reference_layer x
-#      target_layer x induction_class) call -> 2 buffer computations total
-#      instead of 24.
-#   2. orientation_difference is vectorized with numpy instead of a Python
-#      list comprehension over scalar pairs.
-#   3. overlap_length_with_buffer is vectorized using GeoSeries.intersection()
-#      / .length instead of calling shapely .intersection() one row at a time.
-#
-# All three changes compute exactly the same values as before, just in
-# batches instead of row-by-row / call-by-call, so the resulting pair tables
-# and output GeoPackage layers are expected to be identical to the original
-# script's output. Recommended: diff the CSVs / compare layers against a run
-# of the original script on your data before fully switching over.
-# =============================================================================
+"""
+find_parallel_features
 
+Finds segment-level relationships between selected conduit parts and proposed-HV/electricity reference parts.
+Reference parts are classified as ag, ug_le24kv or ug_gt24kv from verticalePositie and werkVoltage. 
+Each receives a square/flat buffer of 1,610 m, 550 m or 850 m. 
+For each target layer and class, only target parts whose corresponding inductive_* field is 'no-pass' are candidates. 
+A spatial join finds target segments intersecting the reference buffer. 
+The code calculates undirected bearing difference, rejects target midpoints projected at the extreme start/end of the reference part, 
+calculates the target length inside the reference buffer, and retains pairs meeting overlap thresholds. 
+Results are aggregated back to both target and reference segment attributes, while the authoritative many-to-many pair table is written separately. 
+Complete influenced features are removed only when none of their parts match either reference type; 
+complete electricity features are similarly removed when none of their parts match a conduit.
+
+Input:
+    Reads KLIC_temp10.gpkg.
+Output:
+    Writes KLIC_temp11.gpkg and KLIC_temp11_parallel_match_tables/parallel_pairs_all.csv.
+"""
 from pathlib import Path
 import math
 import time

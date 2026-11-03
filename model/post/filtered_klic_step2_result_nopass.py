@@ -1,4 +1,15 @@
-#Script 24
+"""
+filtered_klic_step2_result_nopass
+
+Exports only rows that receive a Step 2 inductive no-pass result.
+Reconstructs normalized assessed geometry, detects Step 2 failure status, restores source identity, groups related failures and dissolves geometry through the shared memory-aware helper.
+
+Input:
+    KLIC_temp20.gpkg.
+
+Output:
+    KLIC_no_pass_step2.gpkg.
+"""
 import sqlite3
 from pathlib import Path
 

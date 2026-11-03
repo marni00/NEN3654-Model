@@ -1,4 +1,16 @@
-# Script 23: Merge full assessment results without no-pass filtering
+"""
+filtered_klic_step1_result
+
+Exports all NEN Step 1 assessment results into readable result layers.
+Detects normalized assessment storage, reconstructs assessed reference and influenced layers, normalizes status values, adds infrastructure_type and writes thematic result layers. 
+The result includes both pass and no-pass rows; it is not limited to failures.
+
+Input:
+    KLIC_temp19.gpkg.
+
+Output:
+    KLIC_results_step1.gpkg, including result layers for the available assessment themes.
+"""
 from pathlib import Path
 
 import geopandas as gpd
