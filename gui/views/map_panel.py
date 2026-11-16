@@ -12,10 +12,11 @@ from __future__ import annotations
 import hashlib
 import json
 
-from PySide6.QtCore import QObject, Qt, QUrl, Signal, Slot
+from PySide6.QtCore import QFile, QIODevice, QObject, Qt, QUrl, Signal, Slot
 from PySide6.QtWebChannel import QWebChannel
 from PySide6.QtWebEngineCore import (
     QWebEnginePage,
+    QWebEngineScript,
     QWebEngineSettings,
 )
 from PySide6.QtWebEngineWidgets import QWebEngineView
@@ -42,6 +43,29 @@ DATASET_LABELS = {
     "part2_step2": "Part 2 · results step 2",
     "part2_no_pass_step2": "Part 2 · no-pass step 2",
 }
+
+
+def _create_webchannel_script() -> QWebEngineScript:
+    resource = QFile(":/qtwebchannel/qwebchannel.js")
+    if not resource.open(QIODevice.OpenModeFlag.ReadOnly):
+        raise RuntimeError(
+            "Qt WebChannel JavaScript could not be loaded: "
+            f"{resource.errorString()}"
+        )
+    try:
+        source = bytes(resource.readAll().data()).decode("utf-8")
+    finally:
+        resource.close()
+
+    script = QWebEngineScript()
+    script.setName("QtWebChannel")
+    script.setInjectionPoint(
+        QWebEngineScript.InjectionPoint.DocumentCreation
+    )
+    script.setWorldId(QWebEngineScript.ScriptWorldId.MainWorld)
+    script.setRunsOnSubFrames(False)
+    script.setSourceCode(source)
+    return script
 
 
 class SecureMapPage(QWebEnginePage):
@@ -157,6 +181,7 @@ class MapPanel(QSplitter):
         self.channel = QWebChannel(page)
         self.channel.registerObject("bridge", self.bridge)
         page.setWebChannel(self.channel)
+        page.scripts().insert(_create_webchannel_script())
         self.bridge.featureClicked.connect(self._feature_clicked)
         self.bridge.overlappingFeaturesSelected.connect(self._overlapping_features_selected)
         self.bridge.selectionCleared.connect(self._selection_cleared)

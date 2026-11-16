@@ -6,6 +6,8 @@ from urllib.error import HTTPError
 from urllib.request import urlopen
 
 from gui.services.map_server import LocalMapServer
+from gui.views.map_panel import _create_webchannel_script
+from PySide6.QtWebEngineCore import QWebEngineScript
 
 
 def test_map_shell_and_geojson_are_served_from_same_loopback_origin(tmp_path: Path) -> None:
@@ -64,6 +66,24 @@ def test_map_javascript_loads_geojson_by_url() -> None:
     assert "setLayerUrl(dataset, layer, url)" in javascript
     assert 'data: url' in javascript
     assert "setLayerData(dataset, layer, data)" not in javascript
+
+
+def test_qwebchannel_script_is_injected_before_page_scripts() -> None:
+    project_root = Path(__file__).resolve().parents[1]
+    html = (project_root / "gui" / "web" / "map.html").read_text(
+        encoding="utf-8"
+    )
+    script = _create_webchannel_script()
+
+    assert "qrc:///qtwebchannel/qwebchannel.js" not in html
+    assert (
+        script.injectionPoint()
+        == QWebEngineScript.InjectionPoint.DocumentCreation
+    )
+    assert (
+        script.worldId() == QWebEngineScript.ScriptWorldId.MainWorld
+    )
+    assert "QWebChannel" in script.sourceCode()
 
 
 def test_map_server_can_release_all_published_payloads(tmp_path: Path) -> None:
